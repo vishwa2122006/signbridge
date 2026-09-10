@@ -7,6 +7,7 @@ import EmergencyBanner from "../components/EmergencyBanner.jsx";
 import ErrorNote from "../components/ErrorNote.jsx";
 import SentenceBuilder from "../components/SentenceBuilder.jsx";
 import StatusIndicator from "../components/StatusIndicator.jsx";
+import { useAuth } from "../AuthContext.jsx";
 import { useSignRecognizer } from "../hooks/useSignRecognizer.js";
 import { useLanguage } from "../LanguageContext.jsx";
 import { OFFLINE_ERROR, api } from "../api.js";
@@ -15,6 +16,7 @@ import { speakBilingual } from "../speech.js";
 
 export default function Translate() {
   const { lang } = useLanguage();
+  const { user, isAdmin } = useAuth();
   const [cameraOn, setCameraOn] = useState(false);
   const [health, setHealth] = useState(undefined); // undefined = loading, null = backend offline
   const recognizer = useSignRecognizer();
@@ -43,14 +45,16 @@ export default function Translate() {
                 <T k="noModelTitle" />
               </h3>
               <p className="dim flush">
-                <T k="noModelBody" />
+                <T k={isAdmin ? "noModelBodyAdmin" : user ? "noModelBodyTrainer" : "noModelBody"} />
               </p>
             </div>
-            <Link to="/teach">
-              <button className="warm">
-                <T k="goTeach" /> ➜
-              </button>
-            </Link>
+            {user && (
+              <Link to={isAdmin ? "/review" : "/teach"}>
+                <button className="warm">
+                  <T k={isAdmin ? "goReview" : "goTeach"} /> ➜
+                </button>
+              </Link>
+            )}
           </div>
         </div>
       )}

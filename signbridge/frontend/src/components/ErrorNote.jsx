@@ -2,7 +2,32 @@ import React from "react";
 import { Bi, T } from "./Bilingual.jsx";
 
 // Backend error codes the UI explains in the current language.
-const CODE_KEYS = { offline: "backendOffline", busy: "trainingBusy", no_hands: "noHandsInRecording" };
+const CODE_KEYS = {
+  offline: "backendOffline",
+  busy: "trainingBusy",
+  no_hands: "noHandsInRecording",
+  invalid_credentials: "errInvalidCredentials",
+  email_not_verified: "errEmailNotVerified",
+  account_disabled: "errAccountDisabled",
+  email_taken: "errEmailTaken",
+  no_account: "errNoAccount",
+  already_verified: "errAlreadyVerified",
+  otp_invalid: "errOtpInvalid",
+  otp_expired: "errOtpExpired",
+  otp_too_many_attempts: "errOtpTooMany",
+  otp_cooldown: "errOtpCooldown",
+  email_failed: "errEmailFailed",
+  login_required: "errLoginRequired",
+  session_expired: "errSessionExpired",
+  admin_only: "errAdminOnly",
+  wrong_password: "errWrongPassword",
+  word_exists: "errWordExists",
+  word_pending: "errWordPending",
+  word_not_approved: "errWordNotApproved",
+  nothing_to_submit: "errNothingToSubmit",
+  already_reviewed: "errAlreadyReviewed",
+  not_allowed: "errNotAllowed",
+};
 
 /**
  * Shows an error readably in the current language. Accepts an ApiError from
@@ -18,7 +43,7 @@ export default function ErrorNote({ error, wordOf }) {
   if (key) {
     return (
       <div className="note error" role="alert">
-        ⚠️ <T k={key} vars={error.vars} />
+        ⚠️ <T k={key} vars={error.vars || detail} />
       </div>
     );
   }

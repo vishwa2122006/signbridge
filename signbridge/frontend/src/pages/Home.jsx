@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { T } from "../components/Bilingual.jsx";
+import { useAuth } from "../AuthContext.jsx";
 
 const EXAMPLES = [
   { sign: "👋", tamil: "வணக்கம்", english: "Hello" },
@@ -22,7 +23,12 @@ const FEATURES = [
 ];
 
 export default function Home() {
+  const { user } = useAuth();
   const [index, setIndex] = useState(0);
+  // the public is invited to become a trainer instead of going to the (login-only) Teach page
+  const steps = user
+    ? STEPS
+    : [{ ...STEPS[0], to: "/register", title: "becomeTrainerTitle", body: "becomeTrainerBody" }, ...STEPS.slice(1)];
 
   useEffect(() => {
     const id = setInterval(() => setIndex((i) => (i + 1) % EXAMPLES.length), 2800);
@@ -63,7 +69,7 @@ export default function Home() {
       </section>
 
       <div className="grid cols-3">
-        {STEPS.map((step, i) => (
+        {steps.map((step, i) => (
           <Link key={step.to} to={step.to} className="card step-card" style={{ "--hue": step.hue }}>
             <span className="step-num">{i + 1}</span>
             <div className="step-icon">{step.icon}</div>

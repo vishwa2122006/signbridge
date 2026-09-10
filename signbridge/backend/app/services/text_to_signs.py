@@ -7,7 +7,7 @@ are matched against the vocabulary, longest phrase first ("blood test" before
 "test"), with simple plural/verb endings, Tamil suffixes ("வலிக்கிறது" -> வலி)
 and a small hand-written synonym list. Words that aren't in the vocabulary are
 returned too (concept None) so the UI can still show them as text. A sign can
-only be shown for words that have recorded samples (has_sign).
+only be shown for words that have approved recordings (has_sign).
 """
 
 import re
@@ -82,7 +82,7 @@ def text_to_signs(text: str) -> List[dict]:
     raw = _TOKEN_RE.findall(text)
     tokens = [_normalize(t) for t in raw]
     english, tamil = _index()
-    recorded = sample_store.stats()
+    recorded = sample_store.approved_stats()
 
     items, i = [], 0
     while i < len(tokens):

@@ -16,6 +16,12 @@ export const STRINGS = {
   navTeach: { en: "Teach Signs", ta: "சைகைகளைக் கற்பி" },
   navConversation: { en: "Conversation", ta: "உரையாடல்" },
   navVocabulary: { en: "Vocabulary", ta: "சொல்லகராதி" },
+  navReview: { en: "Review & Train", ta: "சரிபார்த்து பயிற்சி" },
+  navAccount: { en: "My account", ta: "என் கணக்கு" },
+  logIn: { en: "Log in", ta: "உள்நுழை" },
+  logOut: { en: "Log out", ta: "வெளியேறு" },
+  roleAdmin: { en: "Admin", ta: "நிர்வாகி" },
+  roleTrainer: { en: "Trainer", ta: "பயிற்சியாளர்" },
 
   // Home
   heroBadge: { en: "Live sign language translation", ta: "நேரடி சைகை மொழிபெயர்ப்பு" },
@@ -30,8 +36,13 @@ export const STRINGS = {
   startTranslating: { en: "Start translating", ta: "மொழிபெயர்க்கத் தொடங்கு" },
   step1Title: { en: "Teach", ta: "கற்பி" },
   step1Body: {
-    en: "Record a few samples of each word and train the model.",
-    ta: "ஒவ்வொரு சொல்லுக்கும் சில மாதிரிகளைப் பதிவுசெய்து மாதிரிக்குப் பயிற்சி அளியுங்கள்.",
+    en: "Trainers record a few samples of each word; an admin approves them and trains the model.",
+    ta: "பயிற்சியாளர்கள் ஒவ்வொரு சொல்லுக்கும் சில மாதிரிகளைப் பதிவு செய்கிறார்கள்; நிர்வாகி அவற்றை ஏற்று மாதிரிக்குப் பயிற்சி அளிக்கிறார்.",
+  },
+  becomeTrainerTitle: { en: "Become a trainer", ta: "பயிற்சியாளர் ஆகுங்கள்" },
+  becomeTrainerBody: {
+    en: "Register to record the signs that teach SignBridge. An admin reviews every recording.",
+    ta: "SignBridge-க்குக் கற்பிக்கும் சைகைகளைப் பதிவு செய்ய பதிவு செய்யுங்கள். ஒவ்வொரு பதிவையும் நிர்வாகி சரிபார்க்கிறார்.",
   },
   step2Title: { en: "Translate", ta: "மொழிபெயர்" },
   step2Body: {
@@ -75,10 +86,19 @@ export const STRINGS = {
   // Translate
   noModelTitle: { en: "No trained model yet", ta: "இன்னும் பயிற்சி பெற்ற மாதிரி இல்லை" },
   noModelBody: {
-    en: "Teach the app your signs first: record a few samples of each word, then click Train.",
-    ta: "முதலில் உங்கள் சைகைகளைக் கற்பியுங்கள்: ஒவ்வொரு சொல்லுக்கும் சில மாதிரிகளைப் பதிவுசெய்து, பயிற்சி அளிக்கவும்.",
+    en: "The model hasn't been trained yet. Please check back soon.",
+    ta: "மாதிரிக்கு இன்னும் பயிற்சி அளிக்கப்படவில்லை. விரைவில் மீண்டும் பாருங்கள்.",
+  },
+  noModelBodyTrainer: {
+    en: "Record signs on Teach Signs and submit them; an admin trains the model once they're approved.",
+    ta: "'சைகைகளைக் கற்பி' பக்கத்தில் சைகைகளைப் பதிவுசெய்து சமர்ப்பியுங்கள்; அவை ஏற்கப்பட்டதும் நிர்வாகி மாதிரிக்குப் பயிற்சி அளிப்பார்.",
+  },
+  noModelBodyAdmin: {
+    en: "Approve recordings and train the model on the Review & Train page.",
+    ta: "'சரிபார்த்து பயிற்சி' பக்கத்தில் பதிவுகளை ஏற்று மாதிரிக்குப் பயிற்சி அளியுங்கள்.",
   },
   goTeach: { en: "Go to Teach Signs", ta: "சைகைகளைக் கற்பி பக்கத்திற்குச் செல்" },
+  goReview: { en: "Go to Review & Train", ta: "சரிபார்த்து பயிற்சி பக்கத்திற்குச் செல்" },
   wordsKnown: { en: "words the model knows", ta: "மாதிரிக்குத் தெரிந்த சொற்கள்" },
   confidence: { en: "Confidence", ta: "நம்பகத்தன்மை" },
   reset: { en: "Reset", ta: "மீட்டமை" },
@@ -95,11 +115,19 @@ export const STRINGS = {
   send: { en: "Send", ta: "அனுப்பு" },
 
   // Teach
-  teachIntro: {
-    en: "Pick a word, press Record and perform the sign when the countdown ends. Only hand and body points are saved - never video.",
-    ta: "ஒரு சொல்லைத் தேர்ந்தெடுத்து, பதிவு பொத்தானை அழுத்தி, எண்ணிக்கை முடிந்ததும் சைகையைச் செய்யுங்கள். கை மற்றும் உடல் புள்ளிகள் மட்டுமே சேமிக்கப்படும் - வீடியோ ஒருபோதும் சேமிக்கப்படாது.",
+  teachIntroTrainer: {
+    en: "Pick a word, press Record and perform the sign when the countdown ends. Recordings stay private drafts until you submit them for review. Only hand and body points are saved - never video.",
+    ta: "ஒரு சொல்லைத் தேர்ந்தெடுத்து, பதிவு பொத்தானை அழுத்தி, எண்ணிக்கை முடிந்ததும் சைகையைச் செய்யுங்கள். சரிபார்ப்புக்குச் சமர்ப்பிக்கும் வரை பதிவுகள் தனிப்பட்ட வரைவுகளாக இருக்கும். கை மற்றும் உடல் புள்ளிகள் மட்டுமே சேமிக்கப்படும் - வீடியோ ஒருபோதும் சேமிக்கப்படாது.",
   },
-  signerName: { en: "Signer name", ta: "சைகை செய்பவர் பெயர்" },
+  teachIntroAdmin: {
+    en: "Pick a word, press Record and perform the sign when the countdown ends. Your recordings are approved straight away. Only hand and body points are saved - never video.",
+    ta: "ஒரு சொல்லைத் தேர்ந்தெடுத்து, பதிவு பொத்தானை அழுத்தி, எண்ணிக்கை முடிந்ததும் சைகையைச் செய்யுங்கள். உங்கள் பதிவுகள் உடனே ஏற்கப்படும். கை மற்றும் உடல் புள்ளிகள் மட்டுமே சேமிக்கப்படும் - வீடியோ ஒருபோதும் சேமிக்கப்படாது.",
+  },
+  recordingAs: { en: "Recording as", ta: "பதிவு செய்பவர்" },
+  welcomeTrainer: {
+    en: "Welcome! You're a trainer now. Record a word, then submit your recordings for review.",
+    ta: "வரவேற்கிறோம்! நீங்கள் இப்போது பயிற்சியாளர். ஒரு சொல்லைப் பதிவுசெய்து, பின் உங்கள் பதிவுகளைச் சரிபார்ப்புக்குச் சமர்ப்பியுங்கள்.",
+  },
   searchWords: { en: "Search words...", ta: "சொற்களைத் தேடு..." },
   allCategories: { en: "All categories", ta: "அனைத்து பிரிவுகளும்" },
   idleSign: { en: "Idle (no sign)", ta: "ஓய்வு (சைகை இல்லை)" },
@@ -115,7 +143,7 @@ export const STRINGS = {
   saved: { en: "Saved", ta: "சேமிக்கப்பட்டது" },
   wordAdded: { en: "Word added", ta: "சொல் சேர்க்கப்பட்டது" },
   selectWordFirst: { en: "Select a word to record.", ta: "பதிவு செய்ய ஒரு சொல்லைத் தேர்ந்தெடுக்கவும்." },
-  enterSignerName: { en: "Enter the signer's name first.", ta: "முதலில் சைகை செய்பவரின் பெயரை உள்ளிடவும்." },
+  savedDraft: { en: "Saved as draft", ta: "வரைவாகச் சேமிக்கப்பட்டது" },
   noHandsInRecording: {
     en: "Hands weren't visible in most of this recording - keep your hands inside the camera view.",
     ta: "இந்தப் பதிவில் பெரும்பாலும் கைகள் தெரியவில்லை - கைகளை கேமரா பார்வைக்குள் வைத்திருங்கள்.",
@@ -134,8 +162,8 @@ export const STRINGS = {
     ta: "நல்ல முடிவுகளுக்கு: ஒரு சொல்லுக்கு 15+ மாதிரிகள், 2 அல்லது அதற்கு மேற்பட்டவர்களிடமிருந்து, வெவ்வேறு நிலைகள் மற்றும் வெளிச்சத்தில் - ஓய்வு மாதிரிகளுடன்.",
   },
   notEnoughData: {
-    en: "Not enough recordings to train yet. Record at least {min} samples for at least 2 signs (Idle counts as one).",
-    ta: "பயிற்சி அளிக்க இன்னும் போதுமான பதிவுகள் இல்லை. குறைந்தது 2 சைகைகளுக்கு, ஒவ்வொன்றுக்கும் குறைந்தது {min} மாதிரிகளைப் பதிவு செய்யுங்கள் (ஓய்வும் ஒன்றாகக் கணக்கிடப்படும்).",
+    en: "Not enough approved recordings to train yet. Approve at least {min} recordings for each of at least 2 signs (Idle counts as one).",
+    ta: "பயிற்சி அளிக்க இன்னும் போதுமான ஏற்கப்பட்ட பதிவுகள் இல்லை. குறைந்தது 2 சைகைகளுக்கு, ஒவ்வொன்றுக்கும் குறைந்தது {min} பதிவுகளை ஏற்கவும் (ஓய்வும் ஒன்றாகக் கணக்கிடப்படும்).",
   },
   warnFewSigners: {
     en: "Only {n} signer(s): accuracy was measured on the same people, so expect lower accuracy for new signers. Record 3+ people for an honest number.",
@@ -166,6 +194,33 @@ export const STRINGS = {
   category: { en: "Category", ta: "பிரிவு" },
   emergencyWord: { en: "Emergency word", ta: "அவசர சொல்" },
   add: { en: "Add", ta: "சேர்" },
+  proposeWord: { en: "Propose a new word", ta: "புதிய சொல்லைப் பரிந்துரை" },
+  proposeHint: {
+    en: "An admin approves new words before everyone can see them. You can record the word right away.",
+    ta: "புதிய சொற்களை அனைவரும் பார்ப்பதற்கு முன் நிர்வாகி ஒப்புதல் அளிக்கிறார். நீங்கள் அந்தச் சொல்லை உடனே பதிவு செய்யலாம்.",
+  },
+  propose: { en: "Propose", ta: "பரிந்துரை" },
+  wordProposed: { en: "Word sent for approval", ta: "சொல் ஒப்புதலுக்கு அனுப்பப்பட்டது" },
+  awaitingApproval: { en: "Waiting for admin approval", ta: "நிர்வாகியின் ஒப்புதலுக்குக் காத்திருக்கிறது" },
+  myRecordings: { en: "My recordings", ta: "என் பதிவுகள்" },
+  submitForReview: { en: "Submit {n} for review", ta: "{n} பதிவுகளைச் சரிபார்ப்புக்குச் சமர்ப்பி" },
+  submittedNotice: {
+    en: "{n} recordings sent for review. You'll get an email when they're reviewed.",
+    ta: "{n} பதிவுகள் சரிபார்ப்புக்கு அனுப்பப்பட்டன. சரிபார்த்ததும் உங்களுக்கு மின்னஞ்சல் வரும்.",
+  },
+  reviewHint: {
+    en: "Drafts are only visible to you. After you submit, an admin approves or rejects each recording; only approved ones train the model.",
+    ta: "வரைவுகள் உங்களுக்கு மட்டுமே தெரியும். சமர்ப்பித்த பிறகு, நிர்வாகி ஒவ்வொரு பதிவையும் ஏற்கிறார் அல்லது நிராகரிக்கிறார்; ஏற்கப்பட்டவை மட்டுமே மாதிரிக்குப் பயிற்சி அளிக்கும்.",
+  },
+  adminRecordHint: {
+    en: "Your recordings are approved automatically. Review trainers' recordings and train the model on the Review & Train page.",
+    ta: "உங்கள் பதிவுகள் தானாக ஏற்கப்படும். பயிற்சியாளர்களின் பதிவுகளைச் சரிபார்த்து 'சரிபார்த்து பயிற்சி' பக்கத்தில் மாதிரிக்குப் பயிற்சி அளியுங்கள்.",
+  },
+  goReviewTrain: { en: "Review & train", ta: "சரிபார்த்து பயிற்சி" },
+  status_draft: { en: "Draft", ta: "வரைவு" },
+  status_pending: { en: "Waiting", ta: "காத்திருப்பு" },
+  status_approved: { en: "Approved", ta: "ஏற்கப்பட்டது" },
+  status_rejected: { en: "Rejected", ta: "நிராகரிக்கப்பட்டது" },
 
   // Conversation
   patient: { en: "Signer", ta: "சைகை செய்பவர்" },
@@ -193,12 +248,12 @@ export const STRINGS = {
   slow: { en: "Slow", ta: "மெதுவாக" },
   notSigned: { en: "no recorded sign for this word", ta: "இந்தச் சொல்லுக்குப் பதிவுசெய்த சைகை இல்லை" },
   noSignsRecorded: {
-    en: "No recorded signs for these words yet - record them on Teach Signs.",
-    ta: "இந்தச் சொற்களுக்கு இன்னும் பதிவுசெய்த சைகைகள் இல்லை - 'சைகைகளைக் கற்பி' பக்கத்தில் பதிவு செய்யுங்கள்.",
+    en: "No recorded signs for these words yet.",
+    ta: "இந்தச் சொற்களுக்கு இன்னும் பதிவுசெய்த சைகைகள் இல்லை.",
   },
   signsFromRecordings: {
-    en: "Replayed from recordings made on Teach Signs",
-    ta: "'சைகைகளைக் கற்பி' பதிவுகளிலிருந்து காட்டப்படுகிறது",
+    en: "Replayed from trainers' approved recordings",
+    ta: "பயிற்சியாளர்களின் ஏற்கப்பட்ட பதிவுகளிலிருந்து காட்டப்படுகிறது",
   },
   noSpeechRecognition: {
     en: "This browser doesn't support speech recognition.",
@@ -207,12 +262,12 @@ export const STRINGS = {
 
   // Vocabulary
   vocabIntro: {
-    en: "Every word the app can learn. Record a word on the Teach Signs page and train to make it recognizable.",
-    ta: "செயலி கற்றுக்கொள்ளக்கூடிய அனைத்து சொற்களும். ஒரு சொல்லை அடையாளம் காண, 'சைகைகளைக் கற்பி' பக்கத்தில் பதிவுசெய்து பயிற்சி அளிக்கவும்.",
+    en: "Every word the app can learn. Trainers record the words and an admin trains the model to recognize them.",
+    ta: "செயலி கற்றுக்கொள்ளக்கூடிய அனைத்து சொற்களும். பயிற்சியாளர்கள் சொற்களைப் பதிவு செய்கிறார்கள்; அவற்றை அடையாளம் காண நிர்வாகி மாதிரிக்குப் பயிற்சி அளிக்கிறார்.",
   },
   totalWords: { en: "Words", ta: "சொற்கள்" },
   customWords: { en: "Custom words", ta: "தனிப்பயன் சொற்கள்" },
-  totalSamples: { en: "Recorded samples", ta: "பதிவு மாதிரிகள்" },
+  totalSamples: { en: "Approved recordings", ta: "ஏற்கப்பட்ட பதிவுகள்" },
   status: { en: "Status", ta: "நிலை" },
   trained: { en: "Trained", ta: "பயிற்சி பெற்றது" },
   notTrained: { en: "Not trained", ta: "பயிற்சி இல்லை" },
@@ -221,6 +276,225 @@ export const STRINGS = {
   confirmDeleteWord: {
     en: "Delete this word and all its recorded samples?",
     ta: "இந்த சொல்லையும் அதன் அனைத்து மாதிரிகளையும் நீக்கவா?",
+  },
+
+  // Login & registration
+  loginTitle: { en: "Trainer & admin login", ta: "பயிற்சியாளர் & நிர்வாகி உள்நுழைவு" },
+  loginIntro: {
+    en: "Trainers record signs for the model; admins review them and train it. Translating and conversation need no login.",
+    ta: "பயிற்சியாளர்கள் மாதிரிக்காகச் சைகைகளைப் பதிவு செய்கிறார்கள்; நிர்வாகிகள் அவற்றைச் சரிபார்த்துப் பயிற்சி அளிக்கிறார்கள். மொழிபெயர்ப்புக்கும் உரையாடலுக்கும் உள்நுழைவு தேவையில்லை.",
+  },
+  withPassword: { en: "Password", ta: "கடவுச்சொல்" },
+  withEmailCode: { en: "Email code", ta: "மின்னஞ்சல் குறியீடு" },
+  email: { en: "Email", ta: "மின்னஞ்சல்" },
+  password: { en: "Password", ta: "கடவுச்சொல்" },
+  codeLoginHelp: {
+    en: "We'll email you a one-time code - no password needed.",
+    ta: "ஒருமுறைக் குறியீட்டை மின்னஞ்சலில் அனுப்புவோம் - கடவுச்சொல் தேவையில்லை.",
+  },
+  sendCode: { en: "Send code", ta: "குறியீட்டை அனுப்பு" },
+  codeSentTo: { en: "We sent a code to", ta: "குறியீடு அனுப்பப்பட்ட மின்னஞ்சல்:" },
+  code: { en: "Code", ta: "குறியீடு" },
+  verifyCode: { en: "Verify", ta: "சரிபார்" },
+  resendCode: { en: "Send a new code", ta: "புதிய குறியீட்டை அனுப்பு" },
+  resendIn: { en: "New code in {s}s", ta: "{s} வினாடிகளில் புதிய குறியீடு" },
+  codeResent: { en: "A new code is on its way.", ta: "புதிய குறியீடு அனுப்பப்பட்டது." },
+  changeEmail: { en: "Change email", ta: "மின்னஞ்சலை மாற்று" },
+  newTrainer: { en: "Want to help train SignBridge?", ta: "SignBridge-க்குப் பயிற்சி அளிக்க உதவ விரும்புகிறீர்களா?" },
+  registerLink: { en: "Register as a trainer", ta: "பயிற்சியாளராகப் பதிவு செய்யுங்கள்" },
+  haveAccount: { en: "Already registered?", ta: "ஏற்கனவே பதிவு செய்துவிட்டீர்களா?" },
+  logInLink: { en: "Log in", ta: "உள்நுழையுங்கள்" },
+  alreadyLoggedIn: { en: "You're logged in as {name}.", ta: "நீங்கள் {name} ஆக உள்நுழைந்துள்ளீர்கள்." },
+  continue: { en: "Continue", ta: "தொடர்" },
+  registerTitle: { en: "Become a trainer", ta: "பயிற்சியாளர் ஆகுங்கள்" },
+  registerIntro: {
+    en: "Trainers record the signs that teach SignBridge, and an admin reviews every recording before it's used. We'll email you a code to confirm your address.",
+    ta: "பயிற்சியாளர்கள் பதிவு செய்யும் சைகைகள் SignBridge-க்குக் கற்பிக்கின்றன; ஒவ்வொரு பதிவும் பயன்படுத்தப்படுவதற்கு முன் நிர்வாகி சரிபார்க்கிறார். உங்கள் முகவரியை உறுதிசெய்ய ஒரு குறியீட்டை மின்னஞ்சலில் அனுப்புவோம்.",
+  },
+  aboutYou: { en: "About you", ta: "உங்களைப் பற்றி" },
+  fullName: { en: "Full name", ta: "முழுப் பெயர்" },
+  phone: { en: "Phone", ta: "தொலைபேசி" },
+  city: { en: "City / town", ta: "நகரம் / ஊர்" },
+  organization: { en: "Organization (optional)", ta: "நிறுவனம் (விருப்பத்தேர்வு)" },
+  organizationLabel: { en: "Organization", ta: "நிறுவனம்" },
+  organizationPlaceholder: { en: "School, hospital, NGO...", ta: "பள்ளி, மருத்துவமனை, தொண்டு நிறுவனம்..." },
+  yourSigning: { en: "Your signing", ta: "உங்கள் சைகை அனுபவம்" },
+  background: { en: "Background", ta: "பின்னணி" },
+  signingLevel: { en: "Signing level", ta: "சைகைத் திறன்" },
+  signLanguage: { en: "Sign language you use", ta: "நீங்கள் பயன்படுத்தும் சைகை மொழி" },
+  about: { en: "Anything else? (optional)", ta: "வேறு ஏதேனும்? (விருப்பத்தேர்வு)" },
+  choose: { en: "Choose...", ta: "தேர்ந்தெடுக்கவும்..." },
+  confirmPassword: { en: "Repeat password", ta: "கடவுச்சொல்லை மீண்டும் உள்ளிடவும்" },
+  passwordHint: { en: "At least 6 characters.", ta: "குறைந்தது 6 எழுத்துகள்." },
+  consentText: {
+    en: "I agree that my recordings (hand and body points only, never video) are used to train SignBridge.",
+    ta: "எனது பதிவுகள் (கை மற்றும் உடல் புள்ளிகள் மட்டும், வீடியோ அல்ல) SignBridge-க்குப் பயிற்சி அளிக்கப் பயன்படுத்தப்படுவதை ஒப்புக்கொள்கிறேன்.",
+  },
+  registerAndSendCode: { en: "Register & email me a code", ta: "பதிவு செய்து குறியீட்டை அனுப்பு" },
+  passwordsDontMatch: { en: "The passwords don't match.", ta: "கடவுச்சொற்கள் பொருந்தவில்லை." },
+  bg_deaf: { en: "Deaf signer", ta: "காது கேளாத சைகையாளர்" },
+  bg_hard_of_hearing: { en: "Hard of hearing", ta: "செவித்திறன் குறைந்தவர்" },
+  bg_interpreter: { en: "Sign language interpreter", ta: "சைகை மொழிபெயர்ப்பாளர்" },
+  bg_teacher: { en: "Teacher of Deaf students", ta: "காது கேளாத மாணவர்களின் ஆசிரியர்" },
+  bg_family: { en: "Family or friend of a Deaf person", ta: "காது கேளாதவரின் குடும்பத்தினர் / நண்பர்" },
+  bg_student: { en: "Student / learner", ta: "மாணவர் / கற்பவர்" },
+  bg_other: { en: "Other", ta: "மற்றவை" },
+  level_native: { en: "Native signer", ta: "தாய்மொழிச் சைகையாளர்" },
+  level_fluent: { en: "Fluent", ta: "சரளமாக" },
+  level_intermediate: { en: "Intermediate", ta: "இடைநிலை" },
+  level_beginner: { en: "Beginner", ta: "தொடக்க நிலை" },
+  lang_tamil: { en: "Tamil Sign Language", ta: "தமிழ் சைகை மொழி" },
+  lang_indian: { en: "Indian Sign Language (ISL)", ta: "இந்திய சைகை மொழி (ISL)" },
+  lang_both: { en: "Tamil and Indian Sign Language", ta: "தமிழ் மற்றும் இந்திய சைகை மொழி" },
+  lang_other: { en: "Other", ta: "மற்றவை" },
+
+  // Account
+  changePassword: { en: "Change password", ta: "கடவுச்சொல்லை மாற்று" },
+  changePasswordHint: {
+    en: "You can also log in with an email code at any time, so a forgotten password is never a problem.",
+    ta: "எப்போது வேண்டுமானாலும் மின்னஞ்சல் குறியீட்டுடன் உள்நுழையலாம் - கடவுச்சொல் மறந்தாலும் பிரச்சினை இல்லை.",
+  },
+  currentPassword: { en: "Current password", ta: "தற்போதைய கடவுச்சொல்" },
+  newPassword: { en: "New password", ta: "புதிய கடவுச்சொல்" },
+  passwordChanged: {
+    en: "Password changed. Other devices were logged out.",
+    ta: "கடவுச்சொல் மாற்றப்பட்டது. மற்ற சாதனங்களிலிருந்து வெளியேற்றப்பட்டது.",
+  },
+  joined: { en: "Joined", ta: "இணைந்தது" },
+
+  // Review & Train (admins)
+  reviewIntro: {
+    en: "Watch each trainer's recordings, approve the good ones and reject the rest, then train the model on the approved recordings. Trainers get an email about every decision.",
+    ta: "ஒவ்வொரு பயிற்சியாளரின் பதிவுகளையும் பார்த்து, சரியானவற்றை ஏற்று மற்றவற்றை நிராகரியுங்கள்; பின் ஏற்கப்பட்ட பதிவுகளைக் கொண்டு மாதிரிக்குப் பயிற்சி அளியுங்கள். ஒவ்வொரு முடிவும் பயிற்சியாளருக்கு மின்னஞ்சலில் தெரிவிக்கப்படும்.",
+  },
+  tabRecordings: { en: "Recordings", ta: "பதிவுகள்" },
+  tabTrainers: { en: "Trainers", ta: "பயிற்சியாளர்கள்" },
+  trainModelTitle: { en: "Train the model", ta: "மாதிரிக்குப் பயிற்சி" },
+  trainApprovedHint: {
+    en: "Training uses only approved recordings of approved words; each word needs at least {min}.",
+    ta: "ஏற்கப்பட்ட சொற்களின் ஏற்கப்பட்ட பதிவுகள் மட்டுமே பயிற்சிக்குப் பயன்படும்; ஒவ்வொரு சொல்லுக்கும் குறைந்தது {min} தேவை.",
+  },
+  wordsReady: { en: "Words ready to train", ta: "பயிற்சிக்குத் தயாரான சொற்கள்" },
+  approvedRecordings: { en: "Approved recordings", ta: "ஏற்கப்பட்ட பதிவுகள்" },
+  waitingReview: { en: "Waiting for review", ta: "சரிபார்ப்புக்குக் காத்திருப்பவை" },
+  newWordsWaiting: { en: "New words to approve", ta: "ஒப்புதலுக்கான புதிய சொற்கள்" },
+  wordsToReview: { en: "Words", ta: "சொற்கள்" },
+  needsReview: { en: "Needs review", ta: "சரிபார்க்க வேண்டியவை" },
+  allWithRecordings: { en: "All with recordings", ta: "பதிவுகள் உள்ள அனைத்தும்" },
+  queueEmpty: { en: "Nothing is waiting for review. 🎉", ta: "சரிபார்க்க எதுவும் காத்திருக்கவில்லை. 🎉" },
+  noRecordingsYet: { en: "No recordings yet.", ta: "இன்னும் பதிவுகள் இல்லை." },
+  pickWordToReview: { en: "Pick a word to see its recordings.", ta: "பதிவுகளைப் பார்க்க ஒரு சொல்லைத் தேர்ந்தெடுக்கவும்." },
+  newWord: { en: "New word", ta: "புதிய சொல்" },
+  wordAwaitsApproval: { en: "New word waiting for approval", ta: "ஒப்புதலுக்குக் காத்திருக்கும் புதிய சொல்" },
+  wordWasRejected: { en: "This word was rejected", ta: "இந்தச் சொல் நிராகரிக்கப்பட்டது" },
+  proposedBy: { en: "Proposed by", ta: "பரிந்துரைத்தவர்" },
+  noteForTrainer: { en: "Note for the trainer (optional)", ta: "பயிற்சியாளருக்கான குறிப்பு (விருப்பத்தேர்வு)" },
+  approveWord: { en: "Approve word", ta: "சொல்லை ஏற்கவும்" },
+  rejectWord: { en: "Reject word", ta: "சொல்லை நிராகரி" },
+  approveWordFirst: {
+    en: "Approve the word itself before approving its recordings.",
+    ta: "பதிவுகளை ஏற்பதற்கு முன் சொல்லை ஏற்கவும்.",
+  },
+  editWord: { en: "Edit word", ta: "சொல்லைத் திருத்து" },
+  save: { en: "Save", ta: "சேமி" },
+  wordUpdated: { en: "Word updated", ta: "சொல் புதுப்பிக்கப்பட்டது" },
+  filter_pending: { en: "Waiting", ta: "காத்திருப்பு" },
+  filter_approved: { en: "Approved", ta: "ஏற்கப்பட்டவை" },
+  filter_rejected: { en: "Rejected", ta: "நிராகரிக்கப்பட்டவை" },
+  filter_all: { en: "All", ta: "அனைத்தும்" },
+  markAllPending: { en: "Mark every waiting recording:", ta: "காத்திருக்கும் அனைத்துப் பதிவுகளையும்:" },
+  approveAll: { en: "Approve all", ta: "அனைத்தையும் ஏற்கவும்" },
+  rejectAll: { en: "Reject all", ta: "அனைத்தையும் நிராகரி" },
+  all: { en: "All", ta: "அனைத்தும்" },
+  approve: { en: "Approve", ta: "ஏற்கவும்" },
+  reject: { en: "Reject", ta: "நிராகரி" },
+  importedRecordings: { en: "Imported / earlier recordings", ta: "இறக்குமதி / முந்தைய பதிவுகள்" },
+  handsVisible: { en: "Frames with hands visible", ta: "கைகள் தெரியும் சட்டங்கள்" },
+  noRecordingsHere: { en: "No recordings in this list.", ta: "இந்தப் பட்டியலில் பதிவுகள் இல்லை." },
+  decisionsSummary: { en: "{a} to approve · {r} to reject", ta: "ஏற்க {a} · நிராகரிக்க {r}" },
+  rejectNotePlaceholder: {
+    en: "Why rejected? (emailed to the trainer)",
+    ta: "ஏன் நிராகரிப்பு? (பயிற்சியாளருக்கு மின்னஞ்சல் செய்யப்படும்)",
+  },
+  clearMarks: { en: "Clear", ta: "அழி" },
+  saveReview: { en: "Save review", ta: "சரிபார்ப்பைச் சேமி" },
+  reviewSaved: {
+    en: "Saved {n} decisions. The trainers were notified by email.",
+    ta: "{n} முடிவுகள் சேமிக்கப்பட்டன. பயிற்சியாளர்களுக்கு மின்னஞ்சல் அனுப்பப்பட்டது.",
+  },
+  play: { en: "Play", ta: "இயக்கு" },
+  pause: { en: "Pause", ta: "இடைநிறுத்து" },
+  recordingPreview: { en: "Recording replay", ta: "பதிவு மறுஇயக்கம்" },
+  name: { en: "Name", ta: "பெயர்" },
+  details: { en: "Details", ta: "விவரங்கள்" },
+  recordings: { en: "Recordings", ta: "பதிவுகள்" },
+  active: { en: "Active", ta: "செயலில்" },
+  disabled: { en: "Disabled", ta: "முடக்கப்பட்டது" },
+  disable: { en: "Disable", ta: "முடக்கு" },
+  enable: { en: "Enable", ta: "இயக்கு" },
+  notVerified: { en: "Email not verified", ta: "மின்னஞ்சல் சரிபார்க்கப்படவில்லை" },
+  confirmDisable: {
+    en: "Disable this account? They are logged out and can't log in until you enable it again.",
+    ta: "இந்தக் கணக்கை முடக்கவா? அவர் வெளியேற்றப்படுவார்; மீண்டும் இயக்கும் வரை உள்நுழைய முடியாது.",
+  },
+
+  // Errors from the backend, by code (components/ErrorNote.jsx)
+  errInvalidCredentials: { en: "Incorrect email or password.", ta: "மின்னஞ்சல் அல்லது கடவுச்சொல் தவறு." },
+  errEmailNotVerified: {
+    en: "This email isn't verified yet. Register again with it to get a new code.",
+    ta: "இந்த மின்னஞ்சல் இன்னும் சரிபார்க்கப்படவில்லை. புதிய குறியீட்டைப் பெற மீண்டும் பதிவு செய்யுங்கள்.",
+  },
+  errAccountDisabled: {
+    en: "This account has been disabled - please contact the admin.",
+    ta: "இந்தக் கணக்கு முடக்கப்பட்டுள்ளது - நிர்வாகியைத் தொடர்பு கொள்ளவும்.",
+  },
+  errEmailTaken: {
+    en: "An account with this email already exists - log in instead.",
+    ta: "இந்த மின்னஞ்சலுடன் ஏற்கனவே கணக்கு உள்ளது - உள்நுழையவும்.",
+  },
+  errNoAccount: {
+    en: "No account found for this email - please register first.",
+    ta: "இந்த மின்னஞ்சலுக்குக் கணக்கு இல்லை - முதலில் பதிவு செய்யவும்.",
+  },
+  errAlreadyVerified: {
+    en: "This email is already verified - log in instead.",
+    ta: "இந்த மின்னஞ்சல் ஏற்கனவே சரிபார்க்கப்பட்டது - உள்நுழையவும்.",
+  },
+  errOtpInvalid: { en: "Wrong code - {remaining} attempt(s) left.", ta: "தவறான குறியீடு - இன்னும் {remaining} முயற்சி(கள்) உள்ளன." },
+  errOtpExpired: {
+    en: "This code has expired or was already used - ask for a new one.",
+    ta: "இந்தக் குறியீடு காலாவதியானது அல்லது ஏற்கனவே பயன்படுத்தப்பட்டது - புதியதைக் கேளுங்கள்.",
+  },
+  errOtpTooMany: { en: "Too many wrong attempts - ask for a new code.", ta: "அதிகமான தவறான முயற்சிகள் - புதிய குறியீட்டைக் கேளுங்கள்." },
+  errOtpCooldown: {
+    en: "Please wait {retry_after} seconds before asking for another code.",
+    ta: "மற்றொரு குறியீட்டைக் கேட்க {retry_after} வினாடிகள் காத்திருக்கவும்.",
+  },
+  errEmailFailed: {
+    en: "The email couldn't be sent - please try again later.",
+    ta: "மின்னஞ்சலை அனுப்ப முடியவில்லை - பின்னர் மீண்டும் முயற்சிக்கவும்.",
+  },
+  errLoginRequired: { en: "Please log in as a trainer or admin.", ta: "பயிற்சியாளர் அல்லது நிர்வாகியாக உள்நுழையவும்." },
+  errSessionExpired: {
+    en: "Your login has expired - please log in again.",
+    ta: "உங்கள் உள்நுழைவு காலாவதியானது - மீண்டும் உள்நுழையவும்.",
+  },
+  errAdminOnly: { en: "Only an admin can do this.", ta: "நிர்வாகி மட்டுமே இதைச் செய்ய முடியும்." },
+  errWrongPassword: { en: "The current password is incorrect.", ta: "தற்போதைய கடவுச்சொல் தவறு." },
+  errWordExists: { en: "This word is already in the vocabulary.", ta: "இந்தச் சொல் ஏற்கனவே சொல்லகராதியில் உள்ளது." },
+  errWordPending: {
+    en: "This word was already proposed and is waiting for review.",
+    ta: "இந்தச் சொல் ஏற்கனவே பரிந்துரைக்கப்பட்டு சரிபார்ப்புக்குக் காத்திருக்கிறது.",
+  },
+  errWordNotApproved: {
+    en: "Approve the word itself before approving its recordings.",
+    ta: "பதிவுகளை ஏற்பதற்கு முன் சொல்லை ஏற்கவும்.",
+  },
+  errNothingToSubmit: { en: "There are no draft recordings to submit.", ta: "சமர்ப்பிக்க வரைவுப் பதிவுகள் இல்லை." },
+  errAlreadyReviewed: { en: "Reviewed recordings can't be deleted.", ta: "சரிபார்க்கப்பட்ட பதிவுகளை நீக்க முடியாது." },
+  errNotAllowed: {
+    en: "You can only delete words you proposed that haven't been approved.",
+    ta: "நீங்கள் பரிந்துரைத்த, இன்னும் ஏற்கப்படாத சொற்களை மட்டுமே நீக்க முடியும்.",
   },
 };
 
@@ -243,4 +517,12 @@ export function pickText({ tamil, english }, lang) {
   if (lang === "en") return english;
   if (lang === "ta") return tamil;
   return `${tamil} / ${english}`;
+}
+
+/** A date from the API (ISO string) for display; `withTime` adds the time of day. */
+export function formatDate(iso, lang, withTime = false) {
+  if (!iso) return "";
+  const options = { day: "numeric", month: "short", year: "numeric" };
+  if (withTime) Object.assign(options, { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleString(lang === "ta" ? "ta-IN" : "en-IN", options);
 }

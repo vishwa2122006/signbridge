@@ -3,9 +3,10 @@ import_videos.py — turns sign videos (e.g. a public dataset) into training
 samples, in exactly the format the Teach Signs page records.
 
 Runs the same MediaPipe hand + pose models the browser uses over every
-video, keeps only landmark coordinates, and saves one sample per video under
-dataset/landmarks/<concept>/. Afterwards train from the app (Teach Signs ->
-Train model) or with `python ml/train.py`, then restart the backend.
+video, keeps only landmark coordinates, and saves one sample per video to the
+database, already approved (running this script counts as an admin's review).
+Afterwards train from the app (Review -> Train model) or with
+`python ml/train.py`, then restart the backend.
 
 Folder layouts:
     default:  <data_dir>/<concept>/<signer>/<video>.mp4
@@ -37,8 +38,13 @@ from mediapipe.tasks.python import BaseOptions, vision  # noqa: E402
 
 from app import config  # noqa: E402
 from app.ml.features import has_hands  # noqa: E402
+from sqlalchemy import select  # noqa: E402
+
+from app.db import init_db, session_scope  # noqa: E402
+from app.errors import ApiError  # noqa: E402
+from app.models.tables import APPROVED, Word  # noqa: E402
 from app.services import sample_store  # noqa: E402
-from app.services.vocabulary import slugify, vocabulary  # noqa: E402
+from app.services.vocabulary import add_word, slugify, vocabulary  # noqa: E402
 
 MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 MODEL_URLS = {
@@ -153,10 +159,12 @@ def resolve_concept(folder, mapping):
         return concept
     if entry and entry.get("english") and entry.get("tamil"):
         try:
-            row = vocabulary.add_custom(entry["english"], entry["tamil"], entry.get("category") or "CUSTOM")
-            print(f"  + added custom word '{row['concept']}' ({row['english']} / {row['tamil']})")
-            return row["concept"]
-        except ValueError:
+            with session_scope() as db:
+                word = add_word(db, entry["english"], entry["tamil"], entry.get("category") or "CUSTOM")
+                print(f"  + added custom word '{word.concept}' ({word.english} / {word.tamil})")
+            vocabulary.reload()
+            return word.concept
+        except ApiError:  # already in the vocabulary, or proposed and waiting for review
             existing = slugify(entry["english"])
             return existing if vocabulary.get_by_concept(existing) else None
     return None
@@ -191,6 +199,7 @@ def main():
     parser.add_argument("--map", help="CSV mapping dataset folders to concepts")
     parser.add_argument("--source", help="label stored with each sample (default: import:<data_dir name>)")
     args = parser.parse_args()
+    init_db()
 
     data_dir = os.path.abspath(os.path.expanduser(args.data_dir))
     source = args.source or f"import:{os.path.basename(data_dir)}"
@@ -220,11 +229,14 @@ def main():
             skipped[concept] += 1
             continue
 
-        sample_store.save_sample(concept, signer, frames, aspect, source=f"{source}:{os.path.relpath(path, data_dir)}")
+        with session_scope() as db:
+            word = None if concept == config.NONE_LABEL else db.scalar(select(Word).where(Word.concept == concept))
+            sample_store.save_sample(db, word, frames, aspect, status=APPROVED, signer_id=signer,
+                                     source=f"{source}:{os.path.relpath(path, data_dir)}")
         imported[concept] += 1
         print(f"  {concept:<22} {signer:<16} {len(frames):>4} frames  {os.path.basename(path)}")
 
-    print(f"\nImported {sum(imported.values())} samples for {len(imported)} words into {config.samples_dir()}")
+    print(f"\nImported {sum(imported.values())} approved samples for {len(imported)} words into the database")
     for concept, n in sorted(imported.items()):
         print(f"  {concept:<22} {n}")
     if skipped:
@@ -233,7 +245,7 @@ def main():
         print(f"Unknown folders (not in the vocabulary and not mapped): {', '.join(unknown)}\n"
               "  -> add them on the Teach Signs page, or map them with --map.")
     if imported:
-        print("\nNext: train with `python ml/train.py` (or the Train button), then restart the backend.")
+        print("\nNext: train with `python ml/train.py` (or Train model on the Review page), then restart the backend.")
 
 
 if __name__ == "__main__":

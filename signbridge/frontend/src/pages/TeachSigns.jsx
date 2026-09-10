@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Bi, T } from "../components/Bilingual.jsx";
 import CameraFeed from "../components/CameraFeed.jsx";
 import ErrorNote from "../components/ErrorNote.jsx";
+import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { api } from "../api.js";
 import { categoryStyle } from "../colors.js";
@@ -12,140 +14,39 @@ const RECORD_MS = 1500; // matches the live translator's window length
 const COUNTDOWN_STEP_MS = 600;
 const BURST_SIZE = 10;
 const MIN_SAMPLES = 5;
-const SIGNER_KEY = "signbridge.signer";
 const EMPTY_WORD = { english: "", tamil: "", category: "CUSTOM", is_emergency: false };
-const CV_METHOD_KEYS = { "signer-held-out": "cvSignerHeldOut", stratified: "cvStratified" };
+const TRAINER_COLUMNS = ["draft", "pending", "approved", "rejected"];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const percent = (v) => (typeof v === "number" ? `${Math.round(v * 100)}%` : "—");
 
-function readSigner() {
-  try {
-    return localStorage.getItem(SIGNER_KEY) || "";
-  } catch {
-    return "";
-  }
+function StatusCount({ status, n }) {
+  return n ? <span className={`status-pill ${status}`}>{n}</span> : <span className="dim">0</span>;
 }
 
-function TrainingWarnings({ report, wordOf }) {
-  if (!report.warning_codes) {
-    // model trained by an older version: English text only
-    return (report.warnings || []).map((w) => (
-      <div key={w} className="note warn">
-        ⚠️ {w}
-      </div>
-    ));
-  }
-  return report.warning_codes.map((w) => (
-    <div key={w.code} className="note warn">
-      ⚠️ {w.code === "few_signers" && <T k="warnFewSigners" vars={{ n: w.signers }} />}
-      {w.code === "no_idle" && <T k="warnNoIdle" />}
-      {w.code === "no_cv" && <T k="warnNoCv" />}
-      {w.code === "skipped" && (
-        <>
-          <T k="warnSkipped" vars={{ min: w.min_samples }} />
-          <span className="chips inline">
-            {w.words.map((concept) => (
-              <span key={concept} className="chip low">
-                <Bi {...wordOf(concept)} />
-              </span>
-            ))}
-          </span>
-        </>
-      )}
-    </div>
-  ));
-}
-
-function TrainingReport({ report, wordOf }) {
-  const tiles = [
-    { hue: 170, value: percent(report.cv_accuracy), label: "cvAccuracy", sub: CV_METHOD_KEYS[report.cv_method] },
-    { hue: 38, value: percent(report.accepted_rate), label: "acceptedRate", note: `≥ ${percent(report.confidence_threshold)}` },
-    { hue: 330, value: percent(report.precision_at_threshold), label: "precisionAtThreshold" },
-    { hue: 265, value: `${report.num_samples} / ${report.num_signers}`, label: "samplesSigners" },
-  ];
-  return (
-    <div className="report">
-      <div className="toolbar">
-        <h3 className="flush">
-          📊 <T k="lastTraining" />
-        </h3>
-        <span className="dim small">{report.trained_at?.replace("T", " ")}</span>
-      </div>
-      <div className="metrics">
-        {tiles.map((tile) => (
-          <div key={tile.label} className="metric-tile" style={{ "--hue": tile.hue }}>
-            <div className="metric">{tile.value}</div>
-            <div className="small">
-              <T k={tile.label} />
-            </div>
-            {tile.sub && (
-              <div className="dim small">
-                <T k={tile.sub} />
-              </div>
-            )}
-            {tile.note && <div className="dim small">{tile.note}</div>}
-          </div>
-        ))}
-      </div>
-      <TrainingWarnings report={report} wordOf={wordOf} />
-      {report.per_word?.length > 0 && (
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  <T k="word" />
-                </th>
-                <th>F1</th>
-                <th>
-                  <T k="samples" />
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.per_word.map((w) => (
-                <tr key={w.concept}>
-                  <td>
-                    <Bi {...wordOf(w.concept)} />
-                  </td>
-                  <td>
-                    <div className="score">
-                      <div className={`bar${w.f1 < 0.7 ? " low" : ""}`}>
-                        <span style={{ width: `${Math.round(w.f1 * 100)}%` }} />
-                      </div>
-                      {percent(w.f1)}
-                    </div>
-                  </td>
-                  <td>{w.samples}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
+/**
+ * Recording signs, for trainers and admins. A trainer's recordings are private
+ * drafts until submitted for review; an admin's are approved straight away.
+ * The model is trained on the Review page, from approved recordings only.
+ */
 export default function TeachSigns() {
   const { lang } = useLanguage();
+  const { user, isAdmin } = useAuth();
+  const location = useLocation();
   const [signs, setSigns] = useState([]);
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState({});
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [selected, setSelected] = useState(null);
-  const [signer, setSigner] = useState(readSigner);
   const [cameraOn, setCameraOn] = useState(false);
   const [phase, setPhase] = useState("idle"); // idle | countdown | recording | saving
   const [countdown, setCountdown] = useState(0);
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null); // { concept, count } after saving, { concept, added } after adding
-  const [training, setTraining] = useState(false);
-  const [trainError, setTrainError] = useState(null);
-  const [report, setReport] = useState(null);
+  const [listError, setListError] = useState(null);
+  const [submitted, setSubmitted] = useState(null); // how many drafts were just submitted
+  const [submitting, setSubmitting] = useState(false);
   const [newWord, setNewWord] = useState(EMPTY_WORD);
 
   const framesRef = useRef([]);
@@ -165,16 +66,7 @@ export default function TeachSigns() {
   useEffect(() => {
     refresh().catch(setError);
     api.categories().then(setCategories).catch(() => {});
-    api.health().then((h) => h.model?.trained_at && setReport(h.model)).catch(() => {});
   }, [refresh]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(SIGNER_KEY, signer);
-    } catch {
-      // storage unavailable - the name just won't be remembered
-    }
-  }, [signer]);
 
   const onFrame = useCallback((frame, aspect) => {
     aspectRef.current = aspect;
@@ -197,6 +89,16 @@ export default function TeachSigns() {
     );
   }, [signs, search, category]);
 
+  /** Recordings that count for a word: every approved one for an admin; a trainer's own that aren't rejected. */
+  const countFor = useCallback(
+    (concept) => {
+      const s = stats[concept];
+      if (!s) return 0;
+      return isAdmin ? s.approved_total : s.mine.draft + s.mine.pending + s.mine.approved;
+    },
+    [stats, isAdmin],
+  );
+
   const recordOne = async (concept, countdownSteps) => {
     for (let n = countdownSteps; n > 0; n--) {
       setPhase("countdown");
@@ -217,12 +119,7 @@ export default function TeachSigns() {
     }
     setPhase("saving");
     try {
-      await api.createSample({
-        concept,
-        signer_id: signer.trim(),
-        frames: framesRef.current,
-        aspect: aspectRef.current,
-      });
+      await api.createSample({ concept, frames: framesRef.current, aspect: aspectRef.current });
       return true;
     } catch (e) {
       setError(e);
@@ -232,7 +129,6 @@ export default function TeachSigns() {
 
   const record = async (count) => {
     if (!selected) return setError({ key: "selectWordFirst" });
-    if (!signer.trim()) return setError({ key: "enterSignerName" });
     stopRef.current = false;
     setError(null);
     setNotice(null);
@@ -255,20 +151,21 @@ export default function TeachSigns() {
       await api.deleteSample(last);
       await refresh();
     } catch (e) {
-      setTrainError(e);
+      setListError(e);
     }
   };
 
-  const train = async () => {
-    setTraining(true);
-    setTrainError(null);
+  const submitDrafts = async () => {
+    setSubmitting(true);
+    setListError(null);
+    setSubmitted(null);
     try {
-      setReport(await api.train());
+      setSubmitted((await api.submitSamples()).submitted);
       await refresh();
     } catch (e) {
-      setTrainError(e);
+      setListError(e);
     } finally {
-      setTraining(false);
+      setSubmitting(false);
     }
   };
 
@@ -288,8 +185,12 @@ export default function TeachSigns() {
   };
 
   const busy = phase !== "idle";
-  const recorded = Object.entries(stats).sort(([a], [b]) => wordOf(a).english.localeCompare(wordOf(b).english));
+  const recorded = Object.entries(stats)
+    .filter(([, s]) => Object.values(s.mine).some(Boolean) || (isAdmin && s.approved_total > 0))
+    .sort(([a], [b]) => wordOf(a).english.localeCompare(wordOf(b).english));
+  const drafts = Object.values(stats).reduce((n, s) => n + s.mine.draft, 0);
   const selectedHue = selected === NONE ? { "--hue": 250 } : categoryStyle(bySlug[selected]?.category);
+  const noticeKey = notice?.added ? (isAdmin ? "wordAdded" : "wordProposed") : isAdmin ? "saved" : "savedDraft";
 
   return (
     <div>
@@ -298,9 +199,14 @@ export default function TeachSigns() {
           🎓 <T k="navTeach" />
         </h2>
         <p className="dim">
-          <T k="teachIntro" />
+          <T k={isAdmin ? "teachIntroAdmin" : "teachIntroTrainer"} />
         </p>
       </div>
+      {location.state?.welcome && (
+        <div className="note ok">
+          🎉 <T k="welcomeTrainer" />
+        </div>
+      )}
 
       <div className="grid cols-2">
         <div className="card accent warm">
@@ -316,10 +222,9 @@ export default function TeachSigns() {
                 </>
               )}
             </button>
-            <label className="inline-field">
-              👤 <T k="signerName" />
-              <input value={signer} onChange={(e) => setSigner(e.target.value)} placeholder="e.g. dharun" maxLength={40} />
-            </label>
+            <span className="signer-pill">
+              👤 <T k="recordingAs" /> <b>{user.name}</b>
+            </span>
           </div>
 
           <CameraFeed active={cameraOn} onFrame={onFrame}>
@@ -345,9 +250,7 @@ export default function TeachSigns() {
               <>
                 <Bi {...wordOf(selected)} />
                 <span className="spacer" />
-                <span className={`count-pill${(stats[selected]?.count || 0) < MIN_SAMPLES ? " low" : ""}`}>
-                  {stats[selected]?.count || 0}
-                </span>
+                <span className={`count-pill${countFor(selected) < MIN_SAMPLES ? " low" : ""}`}>{countFor(selected)}</span>
               </>
             ) : (
               <span className="dim">
@@ -382,8 +285,7 @@ export default function TeachSigns() {
           <ErrorNote error={error} wordOf={wordOf} />
           {notice && (
             <div className="note ok">
-              ✅ <T k={notice.added ? "wordAdded" : "saved"} /> {notice.count ? <b>{notice.count} ×</b> : null}{" "}
-              <Bi {...wordOf(notice.concept)} />
+              ✅ <T k={noticeKey} /> {notice.count ? <b>{notice.count} ×</b> : null} <Bi {...wordOf(notice.concept)} />
             </div>
           )}
         </div>
@@ -394,7 +296,7 @@ export default function TeachSigns() {
             style={{ "--hue": 250 }}
             onClick={() => setSelected(NONE)}
           >
-            ✋ <T k="idleSign" /> <span className="badge">{stats[NONE]?.count || 0}</span>
+            ✋ <T k="idleSign" /> <span className="badge">{countFor(NONE)}</span>
           </button>
           <p className="dim small">
             <T k="idleHelp" />
@@ -425,10 +327,11 @@ export default function TeachSigns() {
                 className={`word-btn${selected === s.concept ? " active" : ""}`}
                 style={categoryStyle(s.category)}
                 onClick={() => setSelected(s.concept)}
-                title={s.category}
+                title={s.status === "pending" ? t("awaitingApproval", lang) : s.category}
               >
                 <Bi tamil={s.tamil} english={s.english} />
-                {s.samples > 0 && <span className="badge">{s.samples}</span>}
+                {s.status === "pending" && <span aria-label={t("awaitingApproval", lang)}>⏳</span>}
+                {countFor(s.concept) > 0 && <span className="badge">{countFor(s.concept)}</span>}
                 {s.trained && (
                   <span className="tick" title={t("trained", lang)}>
                     ✓
@@ -440,8 +343,13 @@ export default function TeachSigns() {
 
           <details>
             <summary>
-              ➕ <T k="addWord" />
+              ➕ <T k={isAdmin ? "addWord" : "proposeWord"} />
             </summary>
+            {!isAdmin && (
+              <p className="dim small">
+                <T k="proposeHint" />
+              </p>
+            )}
             <form className="add-word" onSubmit={addWord}>
               <label>
                 <T k="english" />
@@ -484,7 +392,7 @@ export default function TeachSigns() {
                 🚨 <T k="emergencyWord" />
               </label>
               <button type="submit" className="teal">
-                <T k="add" />
+                <T k={isAdmin ? "add" : "propose"} />
               </button>
             </form>
           </details>
@@ -494,25 +402,30 @@ export default function TeachSigns() {
       <div className="card accent teal">
         <div className="toolbar">
           <h3 className="flush">
-            🗂️ <T k="recordedWords" />
+            🗂️ <T k={isAdmin ? "recordedWords" : "myRecordings"} />
           </h3>
           <span className="spacer" />
-          <button className="teal" onClick={train} disabled={training || busy || recorded.length === 0}>
-            {training ? (
-              <>
-                <span className="spinner" /> <T k="training" />
-              </>
-            ) : (
-              <>
-                🧠 <T k="train" />
-              </>
-            )}
-          </button>
+          {isAdmin ? (
+            <Link to="/review">
+              <button className="teal">
+                ✅ <T k="goReviewTrain" /> ➜
+              </button>
+            </Link>
+          ) : (
+            <button className="teal" onClick={submitDrafts} disabled={submitting || busy || drafts === 0}>
+              {submitting ? <span className="spinner" /> : "📤"} <T k="submitForReview" vars={{ n: drafts }} />
+            </button>
+          )}
         </div>
         <p className="dim small">
-          <T k="trainHint" />
+          <T k={isAdmin ? "adminRecordHint" : "reviewHint"} /> <T k="trainHint" />
         </p>
-        <ErrorNote error={trainError} wordOf={wordOf} />
+        <ErrorNote error={listError} wordOf={wordOf} />
+        {submitted !== null && (
+          <div className="note ok">
+            📤 <T k="submittedNotice" vars={{ n: submitted }} />
+          </div>
+        )}
 
         {recorded.length === 0 ? (
           <p className="dim">
@@ -526,12 +439,22 @@ export default function TeachSigns() {
                   <th>
                     <T k="word" />
                   </th>
-                  <th>
-                    <T k="samples" />
-                  </th>
-                  <th>
-                    <T k="signers" />
-                  </th>
+                  {isAdmin ? (
+                    <>
+                      <th>
+                        <T k="status_approved" />
+                      </th>
+                      <th>
+                        <T k="signers" />
+                      </th>
+                    </>
+                  ) : (
+                    TRAINER_COLUMNS.map((status) => (
+                      <th key={status}>
+                        <T k={`status_${status}`} />
+                      </th>
+                    ))
+                  )}
                   <th />
                 </tr>
               </thead>
@@ -543,12 +466,23 @@ export default function TeachSigns() {
                         <Bi {...wordOf(concept)} />
                       </button>
                     </td>
-                    <td>
-                      <span className={`count-pill${s.count < MIN_SAMPLES ? " low" : ""}`}>{s.count}</span>
-                    </td>
-                    <td className="small">{s.signers.join(", ")}</td>
+                    {isAdmin ? (
+                      <>
+                        <td>
+                          <span className={`count-pill${s.approved_total < MIN_SAMPLES ? " low" : ""}`}>{s.approved_total}</span>
+                        </td>
+                        <td>{s.signers}</td>
+                      </>
+                    ) : (
+                      TRAINER_COLUMNS.map((status) => (
+                        <td key={status}>
+                          <StatusCount status={status} n={s.mine[status]} />
+                          {status === "rejected" && s.last_note && <div className="small review-note">💬 {s.last_note}</div>}
+                        </td>
+                      ))
+                    )}
                     <td className="right">
-                      <button className="secondary small" onClick={() => deleteLast(concept)} disabled={busy}>
+                      <button className="secondary small" onClick={() => deleteLast(concept)} disabled={busy || !s.last_id}>
                         🗑 <T k="deleteLast" />
                       </button>
                     </td>
@@ -558,7 +492,6 @@ export default function TeachSigns() {
             </table>
           </div>
         )}
-        {report && <TrainingReport report={report} wordOf={wordOf} />}
       </div>
     </div>
   );

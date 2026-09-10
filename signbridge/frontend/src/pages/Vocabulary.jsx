@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { T } from "../components/Bilingual.jsx";
 import ErrorNote from "../components/ErrorNote.jsx";
+import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { api } from "../api.js";
 import { categoryStyle } from "../colors.js";
@@ -8,6 +9,7 @@ import { t } from "../i18n.js";
 
 export default function Vocabulary() {
   const { lang } = useLanguage();
+  const { isAdmin } = useAuth();
   const [signs, setSigns] = useState([]);
   const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState("");
@@ -113,20 +115,21 @@ export default function Vocabulary() {
                 <tr key={s.sign_id}>
                   <td className="word-ta">{s.tamil}</td>
                   <td>
-                    {s.english} {s.is_emergency === "yes" && "🚨"}
+                    {s.english} {s.is_emergency && "🚨"}
                   </td>
                   <td className="nowrap">
                     <span className="tag" style={categoryStyle(s.category)}>
                       {s.category.replace(/_/g, " ")}
                     </span>
                     {s.source === "custom" && <span className="pill custom">{t("custom", lang)}</span>}
+                    {s.status === "pending" && <span className="pill custom">⏳ {t("awaitingApproval", lang)}</span>}
                   </td>
                   <td>{s.samples > 0 ? <span className="count-pill">{s.samples}</span> : <span className="dim">0</span>}</td>
                   <td className="nowrap">
                     <span className={`pill ${s.trained ? "trained" : "untrained"}`}>
                       {s.trained ? `✓ ${t("trained", lang)}` : t("notTrained", lang)}
                     </span>
-                    {s.source === "custom" && (
+                    {isAdmin && s.source === "custom" && (
                       <button className="secondary small row-action" onClick={() => remove(s)}>
                         🗑 <T k="delete" />
                       </button>

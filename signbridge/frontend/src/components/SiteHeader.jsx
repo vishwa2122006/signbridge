@@ -1,16 +1,58 @@
 import React, { useEffect, useRef, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { T } from "./Bilingual.jsx";
 import LanguageToggle from "./LanguageToggle.jsx";
+import { useAuth } from "../AuthContext.jsx";
+import { useLanguage } from "../LanguageContext.jsx";
+import { t } from "../i18n.js";
 
-// Each section has its own color (see .main-nav in index.css).
+// Each section has its own color (see .main-nav in index.css). `role`: only for
+// logged-in trainers and admins ("trainer"), or only for admins ("admin").
 const NAV = [
   { to: "/", key: "navHome", icon: "🏠", hue: 265 },
   { to: "/translate", key: "navTranslate", icon: "🤟", hue: 170 },
-  { to: "/teach", key: "navTeach", icon: "🎓", hue: 38 },
+  { to: "/teach", key: "navTeach", icon: "🎓", hue: 38, role: "trainer" },
+  { to: "/review", key: "navReview", icon: "✅", hue: 145, role: "admin" },
   { to: "/conversation", key: "navConversation", icon: "💬", hue: 330 },
   { to: "/vocabulary", key: "navVocabulary", icon: "📚", hue: 200 },
 ];
+
+function AccountLinks() {
+  const { lang } = useLanguage();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  if (!user) {
+    return (
+      <Link to="/login">
+        <button className="small teal">
+          🔐 <T k="logIn" />
+        </button>
+      </Link>
+    );
+  }
+  return (
+    <div className="account-chip">
+      <NavLink to="/account" className="account-link" title={user.email}>
+        <span className="avatar-sm">{user.name.slice(0, 1).toUpperCase()}</span>
+        <span className="account-text">
+          <b>{user.name}</b>
+          <span className={`role-tag ${user.role}`}>{t(user.role === "admin" ? "roleAdmin" : "roleTrainer", lang)}</span>
+        </span>
+      </NavLink>
+      <button
+        className="secondary icon-btn"
+        onClick={() => {
+          navigate("/");
+          signOut();
+        }}
+        title={t("logOut", lang)}
+        aria-label={t("logOut", lang)}
+      >
+        🚪
+      </button>
+    </div>
+  );
+}
 
 const ALWAYS_SHOW_NEAR_TOP_PX = 80;
 const SCROLL_THRESHOLD_PX = 8;
@@ -24,6 +66,7 @@ const SCROLL_THRESHOLD_PX = 8;
  */
 export default function SiteHeader() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const topbarRef = useRef(null);
   const navRef = useRef(null);
   const [navHidden, setNavHidden] = useState(false);
@@ -89,11 +132,14 @@ export default function SiteHeader() {
               </div>
             </div>
           </div>
-          <LanguageToggle />
+          <div className="topbar-actions">
+            <LanguageToggle />
+            <AccountLinks />
+          </div>
         </div>
 
         <nav className="main-nav" ref={navRef} inert={navHidden}>
-          {NAV.map((item) => (
+          {NAV.filter((item) => !item.role || (user && (item.role === "trainer" || user.role === "admin"))).map((item) => (
             <NavLink key={item.to} to={item.to} end={item.to === "/"} style={{ "--hue": item.hue }}>
               <span className="nav-icon">{item.icon}</span>
               <T k={item.key} />

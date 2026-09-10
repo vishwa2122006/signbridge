@@ -1,9 +1,9 @@
 """
 sign_demos.py — picks the recording used to show a word to the signer as a hand sign.
 
-The app replays one recorded sample per word. It uses the most typical recording
-of that word (closest to the average of all its recordings in feature space),
-so a one-off sloppy take isn't the one shown.
+The app replays one approved recording per word. It uses the most typical
+one (closest to the average of all the word's approved recordings in feature
+space), so a one-off sloppy take isn't the one shown.
 """
 
 from typing import Dict, Optional, Tuple
@@ -15,7 +15,7 @@ from app.services import sample_store
 
 MIN_HAND_FRAMES = 5
 
-_chosen: Dict[str, Tuple[tuple, str]] = {}  # concept -> (recordings fingerprint, sample id)
+_chosen: Dict[str, Tuple[tuple, int]] = {}  # concept -> (recordings fingerprint, sample id)
 
 
 def _hand_frames(sample: dict) -> int:
@@ -23,10 +23,10 @@ def _hand_frames(sample: dict) -> int:
 
 
 def representative_sample(concept: str) -> Optional[dict]:
-    stats = sample_store.stats().get(concept)
+    stats = sample_store.approved_stats().get(concept)
     if not stats:
         return None
-    samples = [s for s in sample_store.load_concept(concept) if _hand_frames(s) >= MIN_HAND_FRAMES]
+    samples = [s for s in sample_store.approved_for_concept(concept) if _hand_frames(s) >= MIN_HAND_FRAMES]
     if not samples:
         return None
 

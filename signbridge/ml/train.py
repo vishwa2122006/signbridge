@@ -1,8 +1,8 @@
 """
 train.py — trains the sign classifier from the command line.
 
-Same as Teach Signs -> Train model in the app: uses every sample under
-dataset/landmarks/ and writes dataset/models/. A running backend loads the
+Same as Review -> Train model in the app: uses every approved recording in
+the database and writes dataset/models/. A running backend loads the
 new model on restart (the in-app Train button hot-swaps it instead).
 
 Usage (from the signbridge/ folder, with the backend venv active):
@@ -25,12 +25,11 @@ def pct(value):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--samples_dir", default=None, help=f"default: {config.samples_dir()}")
     parser.add_argument("--model_dir", default=None, help=f"default: {config.model_dir()}")
     args = parser.parse_args()
 
     try:
-        meta = trainer.train_and_save(args.samples_dir, args.model_dir)
+        meta = trainer.train_and_save(model_dir=args.model_dir)
     except trainer.NotEnoughDataError as e:
         sys.exit(f"Not enough data: {e}")
 

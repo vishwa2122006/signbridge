@@ -99,7 +99,10 @@ export default function ConversationMode() {
   const revealId = useRef(null);
 
   useEffect(() => {
-    api.listSigns().then(setVocabulary).catch(() => setVocabulary([]));
+    api
+      .listSigns()
+      .then((signs) => setVocabulary(signs.filter((s) => s.status === "approved")))
+      .catch(() => setVocabulary([]));
   }, []);
 
   // New messages scroll the chat to the bottom.
@@ -263,7 +266,7 @@ export default function ConversationMode() {
                       concept: v.concept,
                       english: v.english,
                       tamil: v.tamil,
-                      is_emergency: v.is_emergency === "yes",
+                      is_emergency: v.is_emergency,
                     })
                   }
                 >

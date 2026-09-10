@@ -1,10 +1,16 @@
 import logging
 import threading
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.db import get_db
+from app.errors import ApiError
 from app.ml import trainer
 from app.ml.classifier import SignClassifier
+from app.models.tables import TrainingRun, User
+from app.routers.deps import require_admin
+from app.services import sample_store
 from app.services.recognition import engine
 
 router = APIRouter()
@@ -13,25 +19,25 @@ _training = threading.Lock()
 
 
 @router.post("/train")
-def train():
-    """Trains on every recorded sample and hot-swaps the live model.
+def train(admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Trains on every approved recording and hot-swaps the live model. Admins only.
     Errors carry a `code` so the app can explain them in Tamil or English."""
     if not _training.acquire(blocking=False):
-        raise HTTPException(status_code=409, detail={"code": "busy", "message": "Training is already running."})
+        raise ApiError(409, "busy", "Training is already running.")
     try:
-        meta = trainer.train_and_save()
+        meta = trainer.train_and_save(sample_store.training_samples(db))
     except trainer.NotEnoughDataError as e:
-        raise HTTPException(status_code=400, detail={
-            "code": "not_enough_data",
-            "message": str(e),
-            "counts": e.counts,
-            "min_samples": trainer.MIN_SAMPLES_PER_WORD,
-        })
+        raise ApiError(400, "not_enough_data", str(e), counts=e.counts, min_samples=trainer.MIN_SAMPLES_PER_WORD)
     except Exception as e:
         log.exception("Training failed")
-        raise HTTPException(status_code=500, detail={"code": "training_failed", "message": f"Training failed: {e}"})
+        db.rollback()
+        db.add(TrainingRun(user_id=admin.id, succeeded=False, error=str(e)))
+        db.commit()
+        raise ApiError(500, "training_failed", f"Training failed: {e}")
     finally:
         _training.release()
+    db.add(TrainingRun(user_id=admin.id, succeeded=True, meta=meta))
+    db.commit()
     classifier = SignClassifier.load()
     if classifier is not None:
         engine.load_classifier(classifier)

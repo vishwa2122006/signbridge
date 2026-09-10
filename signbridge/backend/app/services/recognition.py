@@ -134,8 +134,8 @@ class RecognitionEngine:
                 "உங்கள் கைகளை கேமராவில் காட்டுங்கள்.",
             ),
             RecognitionStatus.NO_MODEL: (
-                "No trained model yet. Record samples on the Teach Signs page, then click Train.",
-                "இன்னும் பயிற்சி பெற்ற மாதிரி இல்லை. 'சைகைகளைக் கற்பி' பக்கத்தில் மாதிரிகளைப் பதிவுசெய்து, பயிற்சி அளிக்கவும்.",
+                "No trained model yet. Trainers record signs; an admin reviews them and trains the model.",
+                "இன்னும் பயிற்சி பெற்ற மாதிரி இல்லை. பயிற்சியாளர்கள் சைகைகளைப் பதிவு செய்கிறார்கள்; நிர்வாகி அவற்றைச் சரிபார்த்து மாதிரிக்குப் பயிற்சி அளிக்கிறார்.",
             ),
             RecognitionStatus.IDLE: (
                 "Ready - sign a word.",

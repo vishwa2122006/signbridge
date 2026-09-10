@@ -1,5 +1,5 @@
 """
-trainer.py — trains the sign classifier from recorded landmark samples.
+trainer.py — trains the sign classifier from approved landmark recordings.
 
 Small-data friendly by design: tens of clips per word recorded in the app is
 the expected input, so this uses scikit-learn on engineered features
@@ -115,19 +115,20 @@ def _cross_validate(name, X, y, origin, is_original, n_samples, splits):
     return predicted, confidence, evaluated
 
 
-def train_and_save(samples_dir: Optional[str] = None, model_dir: Optional[str] = None) -> dict:
+def train_and_save(samples: Optional[List[dict]] = None, model_dir: Optional[str] = None) -> dict:
+    """Trains on `samples` (default: every approved recording in the database) and saves the model."""
     model_dir = model_dir or config.model_dir()
     started = time.time()
 
-    all_samples = sample_store.load_all(samples_dir)
+    all_samples = sample_store.training_samples() if samples is None else samples
     counts = Counter(s["concept"] for s in all_samples)
     usable = {c for c, n in counts.items() if n >= MIN_SAMPLES_PER_WORD}
     skipped = sorted(c for c in counts if c not in usable)
     if not (usable - {config.NONE_LABEL}) or len(usable) < 2:
-        current = ", ".join(f"{concept} {n}" for concept, n in sorted(counts.items())) or "no samples yet"
+        current = ", ".join(f"{concept} {n}" for concept, n in sorted(counts.items())) or "none approved yet"
         raise NotEnoughDataError(
-            f"Not enough recordings to train yet: record at least {MIN_SAMPLES_PER_WORD} samples for at "
-            f"least 2 signs (Idle counts as one). Current: {current}.",
+            f"Not enough approved recordings to train yet: approve at least {MIN_SAMPLES_PER_WORD} recordings "
+            f"for each of at least 2 signs (Idle counts as one). Current: {current}.",
             dict(counts),
         )
 
