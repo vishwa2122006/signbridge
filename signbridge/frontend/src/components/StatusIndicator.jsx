@@ -1,23 +1,21 @@
 import React from "react";
-import { useLanguage } from "../LanguageContext.jsx";
+import { Bi } from "./Bilingual.jsx";
 
-const STATUS_MAP = {
-  RECOGNIZED: { dot: "recognized", emoji: "🟢" },
-  UNSTABLE: { dot: "processing", emoji: "🟡" },
-  UNCERTAIN: { dot: "unclear", emoji: "🔴" },
-  UNKNOWN_SIGN: { dot: "unclear", emoji: "🔴" },
-  NO_HAND: { dot: "waiting", emoji: "⚪" },
-  NO_MODEL: { dot: "waiting", emoji: "⚪" },
+const STATUS_CLASS = {
+  RECOGNIZED: "recognized",
+  UNSTABLE: "processing",
+  IDLE: "ready",
+  UNCERTAIN: "unclear",
+  UNKNOWN_SIGN: "unclear",
+  NO_HAND: "waiting",
+  NO_MODEL: "waiting",
 };
 
 export default function StatusIndicator({ status, messageEn, messageTa }) {
-  const { lang } = useLanguage();
-  const cfg = STATUS_MAP[status] || STATUS_MAP.NO_HAND;
-  const message = lang === "en" ? messageEn : lang === "ta" ? messageTa : `${messageTa} / ${messageEn}`;
   return (
-    <div className="status-row">
-      <span className={`status-dot ${cfg.dot}`} aria-hidden="true" />
-      <span>{cfg.emoji} {message}</span>
+    <div className={`status-row ${STATUS_CLASS[status] || "waiting"}`} role="status">
+      <span className="status-dot" aria-hidden="true" />
+      <Bi tamil={messageTa} english={messageEn} />
     </div>
   );
 }

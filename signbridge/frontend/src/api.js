@@ -1,59 +1,73 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
-async function j(res) {
-  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+/** An error from the backend. `detail` is FastAPI's error detail: a string, a list of
+ * validation problems, or `{ code, message, ... }` for errors the UI explains itself
+ * (see components/ErrorNote.jsx). `message` is always readable text, never raw JSON. */
+export class ApiError extends Error {
+  constructor(message, status, detail) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+/** Stand-in error for "the backend can't be reached", e.g. when a health check fails. */
+export const OFFLINE_ERROR = new ApiError("Backend not reachable", 0, { code: "offline" });
+
+function describe(detail, fallback) {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((problem) => [problem.loc?.filter((part) => part !== "body").join(" › "), problem.msg].filter(Boolean).join(": "))
+      .join("; ");
+  }
+  return detail?.message || fallback;
+}
+
+async function request(path, { method = "GET", body } = {}) {
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError("Backend not reachable", 0, { code: "offline" });
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    let detail = text;
+    try {
+      detail = JSON.parse(text).detail ?? text;
+    } catch {
+      // plain-text body (e.g. "Internal Server Error")
+    }
+    throw new ApiError(describe(detail, `${res.status} ${res.statusText}`), res.status, detail);
+  }
   return res.json();
 }
 
 export const api = {
-  health: () => fetch(`${API_BASE}/health`).then(j),
+  health: () => request("/health"),
 
-  listSigns: (params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    return fetch(`${API_BASE}/signs${qs ? "?" + qs : ""}`).then(j);
-  },
+  listSigns: (category) => request(`/signs${category ? `?category=${encodeURIComponent(category)}` : ""}`),
+  categories: () => request("/signs/categories"),
+  createSign: (sign) => request("/signs", { method: "POST", body: sign }),
+  deleteSign: (signId) => request(`/signs/${encodeURIComponent(signId)}`, { method: "DELETE" }),
 
-  getSign: (signId) => fetch(`${API_BASE}/sign/${signId}`).then(j),
+  sampleStats: () => request("/samples/stats"),
+  createSample: (sample) => request("/samples", { method: "POST", body: sample }),
+  deleteSample: (sampleId) => request(`/samples/${encodeURIComponent(sampleId)}`, { method: "DELETE" }),
 
-  demoPrioritySigns: () => fetch(`${API_BASE}/signs/demo-priority`).then(j),
+  train: () => request("/train", { method: "POST" }),
 
-  predict: (sessionId, window) =>
-    fetch(`${API_BASE}/predict`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, window }),
-    }).then(j),
+  predict: (sessionId, window, aspect) =>
+    request("/predict", { method: "POST", body: { session_id: sessionId, window, aspect } }),
+  resetSession: (sessionId) => request(`/predict/reset/${encodeURIComponent(sessionId)}`, { method: "POST" }),
 
-  predictSimulate: (sessionId, signId) =>
-    fetch(`${API_BASE}/predict/simulate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, sign_id: signId }),
-    }).then(j),
-
-  resetSession: (sessionId) =>
-    fetch(`${API_BASE}/predict/reset/${sessionId}`, { method: "POST" }).then(j),
-
-  translateTemplate: (conceptSlugs) =>
-    fetch(`${API_BASE}/translate-template`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ concept_slugs: conceptSlugs }),
-    }).then(j),
-
-  submitFeedback: (payload) =>
-    fetch(`${API_BASE}/feedback`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).then(j),
-
-  registerDatasetSample: (payload) =>
-    fetch(`${API_BASE}/dataset/sample`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).then(j),
+  translate: (words) => request("/translate", { method: "POST", body: { words } }),
 };
 
 export { API_BASE };

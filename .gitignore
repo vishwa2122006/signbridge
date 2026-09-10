@@ -7,3 +7,9 @@ venv/
 dist/
 build/
 *.log
+
+# SignBridge user data: recorded landmarks, trained models, custom words, downloaded MediaPipe models
+signbridge/dataset/landmarks/
+signbridge/dataset/models/
+signbridge/dataset/custom_signs.csv
+signbridge/ml/models/

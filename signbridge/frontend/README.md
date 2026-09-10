@@ -1,16 +1,16 @@
-# React + Vite
+# SignBridge frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite. See the project `README.md` for setup and usage.
 
-Currently, two official plugins are available:
+```bash
+npm install
+cp .env.example .env   # VITE_API_BASE, defaults to http://localhost:8000
+npm run dev            # dev server
+npm run lint           # oxlint
+npm run build          # production build in dist/
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Hand and body tracking runs in the browser with `@mediapipe/tasks-vision`
+(`src/mediapipe.js`). The WASM files are loaded from jsDelivr at the same
+version as the npm package; keep the two in sync if you upgrade it. The
+camera needs a secure context: `localhost` or HTTPS.
