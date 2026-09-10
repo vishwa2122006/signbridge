@@ -69,7 +69,9 @@ def create_sample(req: SampleCreate, user: User = Depends(require_user), db: Ses
     if word is not None and sample_store.count_hand_frames(frames) < len(frames) * MIN_HAND_FRAME_RATIO:
         raise ApiError(422, "no_hands",
                        "Hands were not visible in most of this recording - keep your hands inside the camera view.")
-    _reject_another_words_sign(req.concept, frames, req.aspect)
+    # Turned off for now: recordings that match another word's sign are saved too.
+    # Uncomment to refuse them again (see _reject_another_words_sign and the commented test in test_api_flow.py).
+    # _reject_another_words_sign(req.concept, frames, req.aspect)
     sample = sample_store.save_sample(db, word, frames, req.aspect, status=APPROVED if user.is_admin else DRAFT,
                                       user=user, source=req.source)
     db.commit()

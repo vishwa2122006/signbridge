@@ -90,7 +90,7 @@ Open the printed URL (http://localhost:5173).
    - Log in and start the camera.
    - Pick a word, or propose a new one with English + Tamil text. You can record it straight away; others see it once an admin approves it.
    - Press **Record 10** and perform the sign each time the countdown ends. Record **Idle (no sign)** samples too: hands resting or moving naturally.
-   - A recording that the trained model recognizes as a *different* word (at least 85% sure) isn't saved: that sign already belongs to that word, and the error names it. Idle recordings that look like a sign are refused the same way. Only words the current model was trained on can be matched.
+   - *(Currently turned off; the call is commented out in `backend/app/routers/samples.py`.)* A recording that the trained model recognizes as a *different* word (at least 85% sure) isn't saved: that sign already belongs to that word, and the error names it. Idle recordings that look like a sign are refused the same way. Only words the current model was trained on can be matched.
    - Recordings stay private drafts, so you can delete bad takes. Then press **Submit for review**.
 2. **Review & Train** (admins)
    - Pick a word from the queue. Its recordings are grouped by trainer. ▶ replays each one as a moving hand-and-body figure; the ✋ percentage is the share of frames where hands were visible.
@@ -187,7 +187,7 @@ The backend tests need `TEST_DATABASE_URL` in `backend/.env`: a separate databas
 | `SIGNBRIDGE_MIN_CONFIDENCE` | `0.70` | minimum classifier confidence to accept a sign |
 | `SIGNBRIDGE_STABILITY_WINDOW` | `4` | predictions (~250 ms each) that must mostly agree |
 | `SIGNBRIDGE_STABILITY_RATIO` | `0.75` | share of that window the word must win |
-| `SIGNBRIDGE_DUPLICATE_CONFIDENCE` | `0.85` | a new recording the model recognizes as another word this confidently isn't saved |
+| `SIGNBRIDGE_DUPLICATE_CONFIDENCE` | `0.85` | a new recording the model recognizes as another word this confidently isn't saved (check currently turned off) |
 | `VITE_API_BASE` (frontend `.env`) | `http://localhost:8000` | backend URL |
 
 To add sentence patterns, edit the dictionaries and `_FIXED` list in `backend/app/services/templates.py` and add a test in `tests/test_templates.py`. To add built-in words, append to `ml/generate_sign_metadata.py` and re-run it. Never reorder existing entries, because the IDs depend on their order.

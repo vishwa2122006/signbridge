@@ -159,13 +159,13 @@ def test_record_review_train_predict_translate():
         signs = {s["concept"]: s for s in client.get("/signs").json()}
         assert signs["water"]["trained"] and signs["water"]["samples"] == SIGNERS * SAMPLES_PER_SIGNER
 
-        # validation: a sign the model already knows for another word isn't saved
-        r = client.post("/samples", headers=trainers[1], json={"concept": "water", "frames": make_clip("hello", 1, rng)})
-        assert r.status_code == 409, r.text
-        assert r.json()["detail"]["code"] == "sign_already_used" and r.json()["detail"]["word"] == "hello"
-        r = client.post("/samples", headers=trainers[1], json={"concept": NONE_LABEL, "frames": make_clip("water", 1, rng)})
-        assert r.status_code == 409 and r.json()["detail"]["word"] == "water"  # Idle must not be a sign
-        assert post_clip(client, trainers[1], "water", 1, rng).status_code == 200  # the word's own sign is fine
+        # validation (turned off in routers/samples.py): a sign the model already knows for another word isn't saved
+        # r = client.post("/samples", headers=trainers[1], json={"concept": "water", "frames": make_clip("hello", 1, rng)})
+        # assert r.status_code == 409, r.text
+        # assert r.json()["detail"]["code"] == "sign_already_used" and r.json()["detail"]["word"] == "hello"
+        # r = client.post("/samples", headers=trainers[1], json={"concept": NONE_LABEL, "frames": make_clip("water", 1, rng)})
+        # assert r.status_code == 409 and r.json()["detail"]["word"] == "water"  # Idle must not be a sign
+        # assert post_clip(client, trainers[1], "water", 1, rng).status_code == 200  # the word's own sign is fine
 
         # live prediction: a held sign is emitted exactly once
         results = [
