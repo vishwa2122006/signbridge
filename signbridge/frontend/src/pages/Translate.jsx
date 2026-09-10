@@ -90,7 +90,7 @@ export default function Translate() {
               🔁 <T k="reset" />
             </button>
           </div>
-          <CameraFeed active={cameraOn} onWindow={recognizer.onWindow} />
+          <CameraFeed active={cameraOn} onWindow={recognizer.onWindow} windowMs={recognizer.windowMs} />
         </div>
 
         <div className="card spotlight">

@@ -741,6 +741,14 @@ button.icon-btn.clip-play { position: absolute; right: 0.35rem; bottom: 0.35rem;
   background: rgba(27, 22, 64, 0.96); border: 1px solid rgba(139, 92, 246, 0.55); box-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.9);
 }
 
+/* ---------- recording length (Teach Signs) ---------- */
+.length-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0.6rem 0 0.2rem; }
+.length-picker button { padding: 0.35em 0.85em; font-size: 0.85rem; color: var(--text); background: var(--glass-2); border-color: var(--line); box-shadow: none; }
+.length-picker button.active { background: var(--grad-warm); color: #2a0d00; border-color: transparent; }
+.rec-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: rgba(255, 255, 255, 0.15); }
+.rec-progress span { display: block; width: 100%; height: 100%; transform-origin: left; background: var(--grad-warm); animation: rec-fill linear forwards; }
+@keyframes rec-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
 /* ---------- motion ---------- */
 @keyframes pop { from { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.05); } to { transform: scale(1); opacity: 1; } }
 @keyframes slide-in { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }

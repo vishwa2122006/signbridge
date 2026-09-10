@@ -136,6 +136,11 @@ export const STRINGS = {
     ta: "சைகை செய்யாமல் கைகளை ஓய்வாக அல்லது இயல்பாக அசைப்பதைப் பதிவுசெய்யுங்கள் - நீங்கள் சைகை செய்யாதபோது மொழிபெயர்ப்பாளருக்குத் தெரியும்.",
   },
   recordOne: { en: "Record 1", ta: "1 பதிவு" },
+  recordingLength: { en: "Recording length", ta: "பதிவு நேரம்" },
+  lengthMismatch: {
+    en: "Other recordings of this word are about {s} long. Use the same length so the translator recognizes it reliably.",
+    ta: "இந்தச் சொல்லின் மற்ற பதிவுகள் சுமார் {s} நீளம். மொழிபெயர்ப்பாளர் சரியாக அடையாளம் காண அதே நேர அளவைப் பயன்படுத்தவும்.",
+  },
   recordTen: { en: "Record 10", ta: "10 பதிவுகள்" },
   stop: { en: "Stop", ta: "நிறுத்து" },
   getReady: { en: "Get ready", ta: "தயாராகுங்கள்" },
@@ -180,6 +185,10 @@ export const STRINGS = {
   warnNoCv: {
     en: "Not enough samples to measure accuracy yet.",
     ta: "துல்லியத்தை அளவிட இன்னும் போதுமான மாதிரிகள் இல்லை.",
+  },
+  warnMixedLengths: {
+    en: "Recordings of very different lengths - record each word at one length:",
+    ta: "மிகவும் வேறுபட்ட நீளமுள்ள பதிவுகள் - ஒவ்வொரு சொல்லையும் ஒரே நீளத்தில் பதிவு செய்யுங்கள்:",
   },
   lastTraining: { en: "Last training", ta: "கடைசி பயிற்சி" },
   cvAccuracy: { en: "Accuracy", ta: "துல்லியம்" },

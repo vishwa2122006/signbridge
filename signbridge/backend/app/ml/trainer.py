@@ -14,7 +14,7 @@ optimistic for new signers.
 import json
 import os
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from typing import List, Optional
 
 import joblib
@@ -133,6 +133,10 @@ def train_and_save(samples: Optional[List[dict]] = None, model_dir: Optional[str
         )
 
     samples = [s for s in all_samples if s["concept"] in usable]
+    durations = defaultdict(list)
+    for s in samples:
+        durations[s["concept"]].append(features.clip_duration_ms(s["frames"]))
+    window_ms = {concept: features.window_ms(d) for concept, d in durations.items()}
     sample_labels = np.array([s["concept"] for s in samples])
     sample_signers = np.array([s.get("signer_id", "unknown") for s in samples])
     X, y, origin, is_original = _build_rows(samples)
@@ -194,12 +198,19 @@ def train_and_save(samples: Optional[List[dict]] = None, model_dir: Optional[str
     if skipped:
         warnings.append(f"Skipped (fewer than {MIN_SAMPLES_PER_WORD} samples): {', '.join(skipped)}.")
         warning_codes.append({"code": "skipped", "words": skipped, "min_samples": MIN_SAMPLES_PER_WORD})
+    mixed = sorted(
+        c for c, d in durations.items()
+        if len(d) >= 3 and np.percentile(d, 90) >= 1.5 * max(float(np.percentile(d, 10)), 1.0)
+    )
+    if mixed:
+        warnings.append(f"Recordings of very different lengths for: {', '.join(mixed)}. Record each word at one length.")
+        warning_codes.append({"code": "mixed_lengths", "words": mixed})
 
     os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, MODEL_FILE)
     joblib.dump(
         {"estimator": estimator, "labels": list(estimator.classes_),
-         "feature_version": features.FEATURE_VERSION, "time_steps": features.TIME_STEPS},
+         "feature_version": features.FEATURE_VERSION, "time_steps": features.TIME_STEPS, "window_ms": window_ms},
         model_path + ".tmp",
     )
     os.replace(model_path + ".tmp", model_path)
@@ -217,6 +228,8 @@ def train_and_save(samples: Optional[List[dict]] = None, model_dir: Optional[str
         "cv_accuracy": cv_accuracy,
         "candidate_accuracy": candidate_accuracy,
         "per_word": per_word,
+        "window_ms": window_ms,
+        "max_window_ms": max(window_ms.values()),
         "confidence_threshold": config.MIN_CONFIDENCE,
         "accepted_rate": accepted_rate,
         "precision_at_threshold": precision_at_threshold,

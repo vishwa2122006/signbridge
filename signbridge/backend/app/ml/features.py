@@ -27,6 +27,13 @@ NUM_POSE_POINTS = 7
 TIME_STEPS = 16
 DEFAULT_ASPECT = 4 / 3
 
+# Signs can be recorded from 1.5 to 6 seconds long. Live recognition scores each
+# word over about as long as its recordings last: their median length, rounded
+# to WINDOW_STEP_MS (see classifier.py).
+DEFAULT_WINDOW_MS = 1500
+WINDOW_STEP_MS = 500
+MIN_WINDOW_MS = 1000
+
 # Per hand: presence flag + 21 wrist-relative points + (x, y, size) relative to the body.
 PER_HAND = 1 + NUM_HAND_POINTS * 3 + 3
 PER_FRAME = 2 * PER_HAND
@@ -152,6 +159,20 @@ def clip_vector(frames: List[dict], aspect: float = DEFAULT_ASPECT) -> np.ndarra
         delta = np.diff(pos, axis=0) * both
         motion.extend([np.abs(delta).mean(axis=0), delta.std(axis=0), [pres.mean()]])
     return np.concatenate([matrix.reshape(-1)] + [np.asarray(m, dtype=np.float32).ravel() for m in motion])
+
+
+def clip_duration_ms(frames: List[dict]) -> int:
+    """Time from the first to the last frame."""
+    times = [f["t"] for f in frames if f.get("t") is not None]
+    return int(round(max(times) - min(times))) if len(times) >= 2 else 0
+
+
+def window_ms(durations_ms: List[float]) -> int:
+    """The live window for a word: the median length of its recordings, rounded to WINDOW_STEP_MS."""
+    if len(durations_ms) == 0:
+        return DEFAULT_WINDOW_MS
+    median = float(np.median(durations_ms))
+    return int(max(MIN_WINDOW_MS, round(median / WINDOW_STEP_MS) * WINDOW_STEP_MS))
 
 
 def has_hands(frames: List[dict]) -> bool:

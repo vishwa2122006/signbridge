@@ -15,7 +15,7 @@ backend/.venv/bin/python ml/import_videos.py --data_dir dataset/raw
 ```
 
 - Runs the MediaPipe hand + pose landmarkers, the same `.task` models as the browser, downloaded to `ml/models/` on first run, over each video.
-- Stores one landmark sample per video in `dataset/landmarks/<word>/`, exactly like an in-app recording.
+- Stores one landmark sample per video in the database, already approved, exactly like an in-app recording.
 
 | Layout | Command |
 |---|---|
@@ -24,8 +24,9 @@ backend/.venv/bin/python ml/import_videos.py --data_dir dataset/raw
 | folders aren't vocabulary words | add `--map map.csv` with columns `folder,concept,english,tamil,category` |
 
 Use the folder name `_none` for idle / no-sign clips. Videos where no hands
-are detected are skipped. Tip: trim clips to the sign itself (≈1–2 s). The
-live translator looks at 1.5 s windows.
+are detected are skipped. Tip: trim clips to the sign itself. The live
+translator watches each word for about as long as its recordings last (1.5 to
+6 s), so keep all clips of a word a similar length.
 
 ## train.py — command-line training
 

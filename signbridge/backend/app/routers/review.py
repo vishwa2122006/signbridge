@@ -101,6 +101,7 @@ def word_recordings(concept: str, db: Session = Depends(get_db)):
                 "source": sample.source,
                 "num_frames": sample.num_frames,
                 "hand_frames": sample.hand_frames,
+                "duration_ms": sample.duration_ms,
                 "created_at": sample.created_at,
                 "submitted_at": sample.submitted_at,
                 "reviewed_at": sample.reviewed_at,

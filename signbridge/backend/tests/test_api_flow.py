@@ -95,6 +95,10 @@ def test_record_review_train_predict_translate():
         bad_take = record(client, trainers[0], "water", 0, rng, n=1)["id"]
         stats = client.get("/samples/stats", headers=trainers[0]).json()
         assert stats["water"]["mine"] == {"draft": 7, "pending": 0, "approved": 0, "rejected": 0}
+        assert 1400 <= stats["water"]["typical_ms"] <= 1500  # 45 frames at 30 fps
+        too_long = [{"t": i * 100.0, "right": make_clip("water", 0, rng)[0]["right"]} for i in range(80)]
+        r = client.post("/samples", headers=trainers[0], json={"concept": "water", "frames": too_long})
+        assert r.status_code == 422 and r.json()["detail"]["code"] == "too_long"
         assert stats["water"]["last_id"] == bad_take
         assert [w["concept"] for w in client.get("/review/words", headers=admin).json()] == ["thumbs_up"]
 
@@ -150,6 +154,7 @@ def test_record_review_train_predict_translate():
         assert meta["cv_accuracy"] > 0.9
         assert meta["warning_codes"] == []
         assert sorted(meta["words"]) == ["hello", "thumbs_up", "water"]
+        assert meta["max_window_ms"] == 1500 and meta["window_ms"]["water"] == 1500
         assert client.get("/health").json()["model_loaded"] is True
         signs = {s["concept"]: s for s in client.get("/signs").json()}
         assert signs["water"]["trained"] and signs["water"]["samples"] == SIGNERS * SAMPLES_PER_SIGNER

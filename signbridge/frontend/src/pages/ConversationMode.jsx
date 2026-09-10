@@ -238,7 +238,7 @@ export default function ConversationMode() {
               )}
             </button>
           </div>
-          <CameraFeed active={cameraOn} onWindow={recognizer.onWindow} />
+          <CameraFeed active={cameraOn} onWindow={recognizer.onWindow} windowMs={recognizer.windowMs} />
           {result && (
             <StatusIndicator status={result.status} messageEn={result.message_en} messageTa={result.message_ta} />
           )}

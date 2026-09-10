@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app import config
 from app import db as database
+from app.ml import features
 from app.models.tables import APPROVED, DRAFT, PENDING, REJECTED, Sample, User, Word, utcnow
 
 STATUSES = (DRAFT, PENDING, APPROVED, REJECTED)
@@ -39,6 +40,7 @@ def save_sample(db: Session, word: Optional[Word], frames: List[dict], aspect: f
         aspect=aspect,
         num_frames=len(frames),
         hand_frames=count_hand_frames(frames),
+        duration_ms=features.clip_duration_ms(frames),
         frames=frames,
         status=status,
         created_at=created_at or utcnow(),
@@ -99,15 +101,27 @@ def approved_for_concept(concept: str, db: Optional[Session] = None) -> List[dic
     ]
 
 
+def _typical_ms(db: Session, *conditions) -> Dict[str, int]:
+    """Median recording length per word, over the recordings matching `conditions`."""
+    rows = db.execute(
+        select(Word.concept, func.percentile_cont(0.5).within_group(Sample.duration_ms))
+        .select_from(Sample).outerjoin(Word, Sample.word_id == Word.id)
+        .where(Sample.duration_ms.is_not(None), *conditions).group_by(Word.concept)
+    )
+    return {concept or config.NONE_LABEL: int(ms) for concept, ms in rows}
+
+
 def user_stats(db: Session, user: User) -> Dict[str, dict]:
     """Per word, for the Teach page: the user's own recordings by status (`mine`), the latest
-    one they may still delete, the note on their latest rejected recording, and the
-    approved recordings from everyone (`approved_total`, from `signers` people)."""
+    one they may still delete, the note on their latest rejected recording, the approved
+    recordings from everyone (`approved_total`, from `signers` people), and how long the
+    word's recordings usually are (`typical_ms`: approved ones, else the user's own)."""
     out: Dict[str, dict] = {}
 
     def entry(concept: Optional[str]) -> dict:
         return out.setdefault(concept or config.NONE_LABEL, {
             "mine": dict.fromkeys(STATUSES, 0), "approved_total": 0, "signers": 0, "last_id": None, "last_note": None,
+            "typical_ms": None,
         })
 
     deletable = STATUSES if user.is_admin else (DRAFT, PENDING)
@@ -135,4 +149,8 @@ def user_stats(db: Session, user: User) -> Dict[str, dict]:
     for concept, stats in approved_stats(db).items():
         e = entry(concept)
         e["approved_total"], e["signers"] = stats["count"], len(stats["signers"])
+
+    typical = {**_typical_ms(db, Sample.user_id == user.id, Sample.status != REJECTED), **_typical_ms(db, _usable())}
+    for concept, ms in typical.items():
+        entry(concept)["typical_ms"] = ms
     return out

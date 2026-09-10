@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
+import { DEFAULT_WINDOW_MS } from "../components/CameraFeed.jsx";
 
 /** Live recognition state for one camera view: sends each landmark window to
  * /predict (never more than one request at a time) and collects each newly
@@ -10,6 +11,15 @@ export function useSignRecognizer() {
   const [result, setResult] = useState(null);
   const [words, setWords] = useState([]);
   const [error, setError] = useState(null);
+  const [windowMs, setWindowMs] = useState(DEFAULT_WINDOW_MS);
+
+  // The camera window must cover the longest word the model knows (pass windowMs to CameraFeed).
+  useEffect(() => {
+    api
+      .health()
+      .then((h) => setWindowMs(h.model?.max_window_ms || DEFAULT_WINDOW_MS))
+      .catch(() => {});
+  }, []);
 
   const onWindow = useCallback(async (frames, aspect) => {
     if (inFlight.current) return; // drop windows while the backend is busy instead of queueing them
@@ -40,5 +50,5 @@ export function useSignRecognizer() {
     setWords([]);
   }, [sessionId]);
 
-  return { result, words, error, onWindow, addWord, undo, clear, reset };
+  return { result, words, error, windowMs, onWindow, addWord, undo, clear, reset };
 }

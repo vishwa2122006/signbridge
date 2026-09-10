@@ -4,7 +4,9 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { t } from "../i18n.js";
 import { HAND_CONNECTIONS, POSE_CONNECTIONS, detectFrame, getLandmarkers, resetTracking } from "../mediapipe.js";
 
-export const WINDOW_MS = 1500;
+// Live window before the model's length is known; the translator then uses the
+// model's longest word (max_window_ms), since words can be recorded 1.5 to 6 s long.
+export const DEFAULT_WINDOW_MS = 1500;
 const EMIT_INTERVAL_MS = 250;
 
 function drawOverlay(canvas, video, handLandmarks, posePoints) {
@@ -45,20 +47,20 @@ function drawOverlay(canvas, video, handLandmarks, posePoints) {
  * Webcam + on-device hand/body tracking. Video never leaves the browser: only
  * landmark coordinates are passed to the callbacks.
  *   onFrame(frame, aspect)    every processed frame
- *   onWindow(frames, aspect)  every 250 ms with the last 1.5 s of frames
+ *   onWindow(frames, aspect)  every 250 ms with the last `windowMs` of frames
  * The picture is mirrored on screen like a selfie view; the landmark data is not.
  */
-export default function CameraFeed({ active, onFrame, onWindow, children }) {
+export default function CameraFeed({ active, onFrame, onWindow, windowMs = DEFAULT_WINDOW_MS, children }) {
   const { lang } = useLanguage();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const callbacksRef = useRef({ onFrame, onWindow });
+  const callbacksRef = useRef({ onFrame, onWindow, windowMs });
   const [state, setState] = useState("loading"); // loading | running | error
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    callbacksRef.current = { onFrame, onWindow };
-  }, [onFrame, onWindow]);
+    callbacksRef.current = { onFrame, onWindow, windowMs };
+  }, [onFrame, onWindow, windowMs]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -81,8 +83,11 @@ export default function CameraFeed({ active, onFrame, onWindow, children }) {
 
         callbacksRef.current.onFrame?.(frame, aspect);
         buffer.push(frame);
-        while (frame.t - buffer[0].t > WINDOW_MS) buffer.shift();
-        if (frame.t - lastEmit >= EMIT_INTERVAL_MS && frame.t - buffer[0].t >= WINDOW_MS * 0.8) {
+        const { windowMs: keepMs } = callbacksRef.current;
+        while (frame.t - buffer[0].t > keepMs) buffer.shift();
+        // start predicting once the shortest words fit; longer ones are scored when enough is seen
+        const readyMs = Math.min(keepMs, DEFAULT_WINDOW_MS) * 0.8;
+        if (frame.t - lastEmit >= EMIT_INTERVAL_MS && frame.t - buffer[0].t >= readyMs) {
           lastEmit = frame.t;
           callbacksRef.current.onWindow?.(buffer.slice(), aspect);
         }

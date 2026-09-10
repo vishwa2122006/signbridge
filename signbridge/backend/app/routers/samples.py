@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app import config
 from app.db import get_db
 from app.errors import ApiError
+from app.ml import features
 from app.models.schemas import SampleCreate, SubmitRequest
 from app.models.tables import APPROVED, DRAFT, PENDING, Sample, User, Word, utcnow
 from app.routers.deps import require_user
@@ -17,6 +18,8 @@ router = APIRouter()
 
 # A word recording where hands were visible in fewer frames than this is rejected.
 MIN_HAND_FRAME_RATIO = 0.3
+# The Teach page records 1.5 to 6 seconds; a little slack for slow cameras.
+MAX_RECORDING_MS = 7000
 
 
 def _word_to_record(db: Session, concept: str, user: User) -> Optional[Word]:
@@ -41,6 +44,8 @@ def create_sample(req: SampleCreate, user: User = Depends(require_user), db: Ses
     """Saves one recording: a trainer's as a draft to submit for review, an admin's approved straight away."""
     word = _word_to_record(db, req.concept, user)
     frames = [f.model_dump() for f in req.frames]
+    if features.clip_duration_ms(frames) > MAX_RECORDING_MS:
+        raise ApiError(422, "too_long", f"Recordings can be at most {MAX_RECORDING_MS // 1000} seconds long.")
     if word is not None and sample_store.count_hand_frames(frames) < len(frames) * MIN_HAND_FRAME_RATIO:
         raise ApiError(422, "no_hands",
                        "Hands were not visible in most of this recording - keep your hands inside the camera view.")

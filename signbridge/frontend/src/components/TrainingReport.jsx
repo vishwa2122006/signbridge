@@ -19,6 +19,18 @@ function TrainingWarnings({ report, wordOf }) {
       ⚠️ {w.code === "few_signers" && <T k="warnFewSigners" vars={{ n: w.signers }} />}
       {w.code === "no_idle" && <T k="warnNoIdle" />}
       {w.code === "no_cv" && <T k="warnNoCv" />}
+      {w.code === "mixed_lengths" && (
+        <>
+          <T k="warnMixedLengths" />
+          <span className="chips inline">
+            {w.words.map((concept) => (
+              <span key={concept} className="chip low">
+                <Bi {...wordOf(concept)} />
+              </span>
+            ))}
+          </span>
+        </>
+      )}
       {w.code === "skipped" && (
         <>
           <T k="warnSkipped" vars={{ min: w.min_samples }} />

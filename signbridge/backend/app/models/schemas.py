@@ -49,7 +49,7 @@ class RawFrame(BaseModel):
 
 class PredictRequest(BaseModel):
     session_id: str = Field(..., max_length=100)
-    window: List[RawFrame] = Field(..., max_length=300, description="The last ~1.5 s of frames")
+    window: List[RawFrame] = Field(..., max_length=600, description="The last few seconds of frames (the model's max_window_ms)")
     aspect: float = Field(DEFAULT_ASPECT, gt=0.2, lt=5.0, description="Video width / height")
 
 

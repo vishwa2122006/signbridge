@@ -9,7 +9,7 @@ when the API starts, so a new, empty database needs no separate setup step.
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
@@ -62,11 +62,22 @@ def session_scope(db: Optional[Session] = None) -> Iterator[Session]:
         session.close()
 
 
+# Columns added after the tables were first created (create_all only creates missing tables).
+_UPGRADES = [
+    "ALTER TABLE samples ADD COLUMN IF NOT EXISTS duration_ms INTEGER",
+    "UPDATE samples SET duration_ms = GREATEST(0, ROUND((frames -> -1 ->> 't')::numeric - (frames -> 0 ->> 't')::numeric))::int "
+    "WHERE duration_ms IS NULL AND jsonb_array_length(frames) > 0",
+]
+
+
 def init_db():
     from app.models import tables  # noqa: F401 - registers the tables on Base.metadata
     from app.services.vocabulary import seed_builtin_words, vocabulary
 
     Base.metadata.create_all(engine())
+    with session_scope() as db:
+        for statement in _UPGRADES:
+            db.execute(text(statement))
     with session_scope() as db:
         seed_builtin_words(db)
     vocabulary.reload()

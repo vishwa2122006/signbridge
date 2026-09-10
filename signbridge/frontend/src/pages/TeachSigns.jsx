@@ -10,7 +10,10 @@ import { categoryStyle } from "../colors.js";
 import { STRINGS, t } from "../i18n.js";
 
 const NONE = "_none";
-const RECORD_MS = 1500; // matches the live translator's window length
+// Slow or two-part signs need longer recordings. The live translator watches each
+// word for about as long as its recordings last, so one word should keep one length.
+const RECORD_LENGTHS_MS = [1500, 2000, 3000, 4000, 5000, 6000];
+const RECORD_LENGTH_KEY = "signbridge.recordMs";
 const COUNTDOWN_STEP_MS = 600;
 const BURST_SIZE = 10;
 const MIN_SAMPLES = 5;
@@ -18,6 +21,17 @@ const EMPTY_WORD = { english: "", tamil: "", category: "CUSTOM", is_emergency: f
 const TRAINER_COLUMNS = ["draft", "pending", "approved", "rejected"];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const seconds = (ms) => `${ms / 1000} s`;
+const closestLength = (ms) => RECORD_LENGTHS_MS.reduce((best, len) => (Math.abs(len - ms) < Math.abs(best - ms) ? len : best));
+
+function readRecordLength() {
+  try {
+    const ms = Number(localStorage.getItem(RECORD_LENGTH_KEY));
+    return RECORD_LENGTHS_MS.includes(ms) ? ms : RECORD_LENGTHS_MS[0];
+  } catch {
+    return RECORD_LENGTHS_MS[0];
+  }
+}
 
 function StatusCount({ status, n }) {
   return n ? <span className={`status-pill ${status}`}>{n}</span> : <span className="dim">0</span>;
@@ -48,6 +62,7 @@ export default function TeachSigns() {
   const [submitted, setSubmitted] = useState(null); // how many drafts were just submitted
   const [submitting, setSubmitting] = useState(false);
   const [newWord, setNewWord] = useState(EMPTY_WORD);
+  const [recordMs, setRecordMs] = useState(readRecordLength);
 
   const framesRef = useRef([]);
   const recordingRef = useRef(false);
@@ -67,6 +82,14 @@ export default function TeachSigns() {
     refresh().catch(setError);
     api.categories().then(setCategories).catch(() => {});
   }, [refresh]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(RECORD_LENGTH_KEY, String(recordMs));
+    } catch {
+      // storage unavailable - the length just won't be remembered
+    }
+  }, [recordMs]);
 
   const onFrame = useCallback((frame, aspect) => {
     aspectRef.current = aspect;
@@ -99,6 +122,13 @@ export default function TeachSigns() {
     [stats, isAdmin],
   );
 
+  /** Selects a word and switches to the length its recordings already use. */
+  const selectWord = (concept) => {
+    setSelected(concept);
+    const typical = stats[concept]?.typical_ms;
+    if (typical) setRecordMs(closestLength(typical));
+  };
+
   const recordOne = async (concept, countdownSteps) => {
     for (let n = countdownSteps; n > 0; n--) {
       setPhase("countdown");
@@ -109,7 +139,7 @@ export default function TeachSigns() {
     framesRef.current = [];
     recordingRef.current = true;
     setPhase("recording");
-    await sleep(RECORD_MS);
+    await sleep(recordMs);
     recordingRef.current = false;
     if (stopRef.current) return false;
 
@@ -190,7 +220,8 @@ export default function TeachSigns() {
     .sort(([a], [b]) => wordOf(a).english.localeCompare(wordOf(b).english));
   const drafts = Object.values(stats).reduce((n, s) => n + s.mine.draft, 0);
   const selectedHue = selected === NONE ? { "--hue": 250 } : categoryStyle(bySlug[selected]?.category);
-  const noticeKey = notice?.added ? (isAdmin ? "wordAdded" : "wordProposed") : isAdmin ? "saved" : "savedDraft";
+  const typicalLength = selected && stats[selected]?.typical_ms ? closestLength(stats[selected].typical_ms) : null;
+  const noticeKey =notice?.added ? (isAdmin ? "wordAdded" : "wordProposed") : isAdmin ? "saved" : "savedDraft";
 
   return (
     <div>
@@ -241,6 +272,9 @@ export default function TeachSigns() {
             {phase === "recording" && (
               <div className="countdown recording">
                 <span className="rec-dot" /> <T k="recording" />
+                <div className="rec-progress">
+                  <span style={{ animationDuration: `${recordMs}ms` }} />
+                </div>
               </div>
             )}
           </CameraFeed>
@@ -258,6 +292,29 @@ export default function TeachSigns() {
               </span>
             )}
           </div>
+
+          <div className="length-picker" role="radiogroup" aria-label={t("recordingLength", lang)}>
+            <span className="small dim">
+              ⏱ <T k="recordingLength" />
+            </span>
+            {RECORD_LENGTHS_MS.map((ms) => (
+              <button
+                key={ms}
+                role="radio"
+                aria-checked={recordMs === ms}
+                className={recordMs === ms ? "active" : ""}
+                onClick={() => setRecordMs(ms)}
+                disabled={busy}
+              >
+                {seconds(ms)}
+              </button>
+            ))}
+          </div>
+          {typicalLength && typicalLength !== recordMs && (
+            <div className="note warn">
+              ⚠️ <T k="lengthMismatch" vars={{ s: seconds(typicalLength) }} />
+            </div>
+          )}
 
           <div className="toolbar">
             <button onClick={() => record(1)} disabled={!cameraOn || !selected || busy}>
@@ -294,7 +351,7 @@ export default function TeachSigns() {
           <button
             className={`word-btn idle${selected === NONE ? " active" : ""}`}
             style={{ "--hue": 250 }}
-            onClick={() => setSelected(NONE)}
+            onClick={() => selectWord(NONE)}
           >
             ✋ <T k="idleSign" /> <span className="badge">{countFor(NONE)}</span>
           </button>
@@ -326,7 +383,7 @@ export default function TeachSigns() {
                 key={s.sign_id}
                 className={`word-btn${selected === s.concept ? " active" : ""}`}
                 style={categoryStyle(s.category)}
-                onClick={() => setSelected(s.concept)}
+                onClick={() => selectWord(s.concept)}
                 title={s.status === "pending" ? t("awaitingApproval", lang) : s.category}
               >
                 <Bi tamil={s.tamil} english={s.english} />
@@ -462,7 +519,7 @@ export default function TeachSigns() {
                 {recorded.map(([concept, s]) => (
                   <tr key={concept}>
                     <td>
-                      <button className="link" onClick={() => setSelected(concept)}>
+                      <button className="link" onClick={() => selectWord(concept)}>
                         <Bi {...wordOf(concept)} />
                       </button>
                     </td>

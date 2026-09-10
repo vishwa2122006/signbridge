@@ -128,6 +128,7 @@ class Sample(Base):
     aspect: Mapped[float] = mapped_column(Float)
     num_frames: Mapped[int] = mapped_column(Integer)
     hand_frames: Mapped[int] = mapped_column(Integer)
+    duration_ms: Mapped[Optional[int]] = mapped_column(Integer)  # first to last frame
     frames: Mapped[list] = mapped_column(JSONB, deferred=True)  # large: only loaded when asked for
     status: Mapped[str] = mapped_column(String(10), default=DRAFT)
     submitted_at: Mapped[Optional[datetime]] = _time()

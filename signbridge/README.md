@@ -7,7 +7,7 @@ language. You teach it your signs, and it turns live signing into
 Tamil + English words and sentences, with a two-way conversation mode for
 talking with a hearing person (e.g. hospital staff).
 
-- **Trainers & admins**: trainers register, record a few 1.5-second samples of each word with their webcam, and propose new words. An admin reviews every recording and word: approve or reject, with an email to the trainer. The admin then trains the model on the approved recordings, in seconds, on CPU. Translating, conversation and the vocabulary are public; recording and training need a login.
+- **Trainers & admins**: trainers register, record a few samples of each word with their webcam (1.5 to 6 seconds each), and propose new words. An admin reviews every recording and word: approve or reject, with an email to the trainer. The admin then trains the model on the approved recordings, in seconds, on CPU. Translating, conversation and the vocabulary are public; recording and training need a login.
 - **Translate**: sign live. Each recognized word appears in Tamil and English, and the words form a sentence you can have spoken aloud.
 - **Conversation**: your signs become text; the other person replies with bilingual quick phrases, typing or dictation. Their replies are shown back to the signer as hand signs, replayed from the recordings made on Teach Signs.
 - **Vocabulary**: 131 built-in words (90 healthcare + 41 everyday), plus custom words with English and Tamil text, proposed by trainers and approved by an admin.
@@ -23,7 +23,7 @@ Browser (webcam) ── MediaPipe hand + pose landmarks, on-device ──► onl
    ├─ Review & Train (admin) ─► POST /review/samples ─► approved / rejected (email to the trainer)
    │                           POST /train ─► approved recordings ─► scikit-learn classifier ─► dataset/models/model.joblib (hot-loaded)
    │
-   └─ Translate ──► every 250 ms, the last 1.5 s of landmarks ─► POST /predict
+   └─ Translate ──► every 250 ms, the last few seconds of landmarks (as long as the longest word) ─► POST /predict
                      ─► confidence threshold + stability voting ─► new word
                      ─► POST /translate (offline rule templates) ─► Tamil + English sentence ─► speech
 ```
@@ -100,6 +100,7 @@ Open the printed URL (http://localhost:5173).
 
 **Tips for accuracy**
 - 15+ samples per word.
+- **Recording length** (1.5 to 6 s): 1.5 s suits most single signs; pick longer only for slow or two-part signs. Keep every recording of a word the same length. The translator watches each word for about as long as its recordings last, and the picker switches to a word's existing length.
 - Record 2–3 different people. With 3+ signers the accuracy number is measured on people the model hasn't seen.
 - Vary your position and the lighting a little.
 - Always include Idle samples.

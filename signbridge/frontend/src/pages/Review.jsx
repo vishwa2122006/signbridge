@@ -266,7 +266,10 @@ function RecordingTile({ sample, decision, onToggle, approveBlocked }) {
           ✋ {handsPct}%
         </span>
       </div>
-      <div className="small dim">{formatDate(sample.submitted_at || sample.created_at, lang, true)}</div>
+      <div className="small dim">
+        {sample.duration_ms ? `⏱ ${(sample.duration_ms / 1000).toFixed(1)} s · ` : ""}
+        {formatDate(sample.submitted_at || sample.created_at, lang, true)}
+      </div>
       {sample.review_note && <div className="small review-note">💬 {sample.review_note}</div>}
       <div className="tile-actions">
         <button
