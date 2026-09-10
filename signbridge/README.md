@@ -1,139 +1,158 @@
 # SignBridge
 
-**"Breaking the communication barrier between Deaf patients and healthcare workers."**
+**Sign language → Tamil and English text (and speech), live from a webcam.**
 
-A hackathon prototype for the problem statement *"Tamil Sign Language (not
-ISL) to Text Translator"* — scoped to a healthcare communication use case,
-built with safety and honesty as first-class requirements, not afterthoughts.
+SignBridge helps Deaf people communicate with people who don't know sign
+language. You teach it your signs, and it turns live signing into
+Tamil + English words and sentences, with a two-way conversation mode for
+talking with a hearing person (e.g. hospital staff).
 
-> **Prototype. Limited, unverified vocabulary. Not a replacement for
-> certified sign-language interpreters. Not a medical diagnosis system.**
-> See `RESPONSIBLE_AI.md`.
+- **Teach Signs**: record a few 1.5-second samples of each word with your webcam and train a model in seconds, on CPU.
+- **Translate**: sign live. Each recognized word appears in Tamil and English, and the words form a sentence you can have spoken aloud.
+- **Conversation**: your signs become text; the other person replies with bilingual quick phrases, typing or dictation. Their replies are shown back to the signer as hand signs, replayed from the recordings made on Teach Signs.
+- **Vocabulary**: 131 built-in words (90 healthcare + 41 everyday), plus any custom words you add with your own English and Tamil text.
+- **Dataset import**: turn sign videos (e.g. a public Tamil/Indian Sign Language dataset) into training samples.
 
-## What's real vs. what's simulated — read this first
+## How it works
 
-This matters more than anything else in this README. Being honest about it
-is the whole point of the project.
+```
+Browser (webcam) ── MediaPipe hand + pose landmarks, on-device ──► only numbers leave the browser, never video
+   │
+   ├─ Teach Signs ─► POST /samples ─► dataset/landmarks/<word>/*.json
+   │                 POST /train   ─► scikit-learn classifier ─► dataset/models/model.joblib (hot-loaded)
+   │
+   └─ Translate ──► every 250 ms, the last 1.5 s of landmarks ─► POST /predict
+                     ─► confidence threshold + stability voting ─► new word
+                     ─► POST /translate (offline rule templates) ─► Tamil + English sentence ─► speech
+```
 
-**Real and working, verified end-to-end in this build:**
-- The full-stack architecture: FastAPI backend + React/Vite frontend, wired
-  together and tested live (Playwright smoke test, screenshots below).
-- Client-side hand-landmark extraction via MediaPipe running in the
-  browser (privacy-by-design — video never leaves the device).
-- The safety-critical recognition engine: confidence thresholding,
-  temporal stability (rejects flickering predictions, accepts stable
-  ones), `UNKNOWN_SIGN` / `NO_HAND` / `NO_MODEL` state handling — all
-  unit-tested (`backend/tests/`, 13/13 passing).
-- The ML training pipeline (`ml/`): landmark extraction, signer-based
-  train/val/test split, precision/recall/F1/confusion-matrix reporting,
-  confidence-threshold rejection analysis — verified end-to-end against a
-  synthetic fixture (see `ml/tests/`), because no real validated Tamil
-  Sign Language video data was available to train on in this environment.
-- The bilingual healthcare ontology (90 candidate concepts,
-  `sign_metadata.csv`), the deterministic sentence-template engine, the
-  Conversation Mode two-way flow, the Dataset Collection Mode with
-  mandatory consent, and the Community Validation feedback loop.
-
-**Not yet real — and deliberately not faked:**
-- **No trained model recognizing actual Tamil Sign Language signs ships
-  with this prototype.** `backend/app/services/recognition.py` has no
-  model loaded by default, so every real `/predict` call honestly returns
-  `NO_MODEL`. This is because no dataset available during research was
-  confirmed (license checked, signer count verified, Deaf-community
-  reviewed) as trustworthy ground truth — seeDATASET_SOURCES.md. Training
-  one is real, scoped work for your team during the hackathon, using
-  `ml/train_classifier.py` once you've collected/validated real clips.
-- **No sign in `sign_metadata.csv` is marked `validated`.** Every concept
-  is `unverified` by design, pending real sourcing and community review.
-- Use **Simulation Mode** (a toggle on the Live Translator page) to demo
-  the entire downstream experience — confidence display, bilingual output,
-  emergency banner, speech — using manually selected concepts instead of
-  a live camera. It's clearly labeled `SIMULATED` everywhere it appears so
-  it can never be mistaken for real recognition.
+- **Features** (`backend/app/ml/features.py`): hand shapes relative to the wrist, hand positions relative to the shoulders, and motion over time. The features don't change with distance from the camera or position in the frame. Training adds mirrored (left-handed) and jittered copies of each recording.
+- **Recognition** (`backend/app/services/recognition.py`) never forces a guess:
+  - low confidence → "please repeat"
+  - a single-frame spike is ignored
+  - a sign held steady counts once
+  - resting hands (the **Idle** class) separate repeated words
+- **Sentences** (`backend/app/services/templates.py`) come from deterministic, hand-written templates, with no AI text generation. For example:
+  - PAIN + STOMACH → "I have stomach pain." / "எனக்கு வயிற்றில் வலி உள்ளது."
+  - WANT + WATER → "I want water." / "எனக்கு தண்ணீர் வேண்டும்."
+  - FEVER + YESTERDAY → "I have had a fever since yesterday."
+  - Words that don't fit a template are shown as plain words.
 
 ## Quick start
 
-**Backend:**
+Requirements: Python 3.10+, Node 20+, a webcam, Chrome or Edge.
+
+**Backend**
 ```bash
 cd backend
-pip install -r requirements.txt
-python3 -m uvicorn app.main:app --reload --port 8000
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/uvicorn app.main:app --reload --port 8000
 ```
 
-**Frontend:**
+**Frontend** (second terminal)
 ```bash
 cd frontend
 npm install
-cp .env.example .env   # points at http://localhost:8000 by default
+cp .env.example .env     # points at http://localhost:8000
 npm run dev
 ```
-Open the printed local URL, click **Start Live Translator**, and toggle
-**Simulation Mode** to see the full flow without a trained model.
 
-**Run the tests:**
+Open the printed URL (http://localhost:5173).
+
+## Using it
+
+1. **Teach Signs**
+   - Enter your name and start the camera.
+   - Pick a word (or add your own with English + Tamil text).
+   - Press **Record 10** and perform the sign each time the countdown ends.
+   - Do this for each word you want, and record **Idle (no sign)** samples too: hands resting or moving naturally.
+2. Click **Train model**. You'll see cross-validated accuracy and per-word scores, plus warnings, e.g. too few signers.
+3. **Translate**: start the camera and sign. Words appear as chips; the sentence updates automatically; 🔊 speaks it.
+4. **Conversation**: the signer signs and presses Send; the hearing person taps a bilingual quick phrase, types, or dictates.
+
+**Tips for accuracy**
+- 15+ samples per word.
+- Record 2–3 different people. With 3+ signers the accuracy number is measured on people the model hasn't seen.
+- Vary your position and the lighting a little.
+- Always include Idle samples.
+- Words that look alike need more samples; check the per-word F1 table after training.
+
+## Importing a video dataset
+
 ```bash
-cd backend && python3 -m pytest tests/ -v         # 13 tests, safety logic
-cd frontend && node smoke_test.mjs                 # live browser smoke test (needs both servers running)
+cd signbridge                               # project folder
+backend/.venv/bin/pip install -r ml/requirements.txt
+backend/.venv/bin/python ml/import_videos.py --data_dir dataset/raw
+backend/.venv/bin/python ml/train.py        # or click Train model in the app
 ```
 
-**Train on real data once you have it** (see `ml/README.md` and
-`DATASET_SOURCES.md` first):
+Supported layouts:
+- `dataset/raw/<word>/<signer>/*.mp4` (default).
+- `--flat --signer NAME` for `<word>/*.mp4`.
+- `--map map.csv` (`folder,concept,english,tamil,category`) when the dataset's folder names aren't vocabulary words. Missing words are created as custom words.
+
+It runs the same MediaPipe models as the browser, so imported and recorded samples can be mixed. Read each dataset's license first. `DATASET_SOURCES.md` lists the Tamil and Indian Sign Language datasets that were found and what still needs checking. For example, for the Kaggle Tamil Sign Language dataset:
+
 ```bash
-cd ml
-python3 extract_landmarks.py --data_dir dataset/raw --out landmarks.npz
-python3 train_classifier.py --data landmarks.npz --out sign_model.keras
-# then wire it into backend/app/main.py per ml/README.md step 4
+kaggle datasets download -d s3programmerlead/tamil-sign-language-video-dataset -p ~/Downloads/tsl --unzip
+# inspect the folder structure, write a map.csv, then:
+backend/.venv/bin/python ml/import_videos.py --data_dir ~/Downloads/tsl/<classes folder> --flat --signer kaggle --map map.csv
 ```
 
 ## Project structure
 
 ```
-signbridge/
-  DATASET_SOURCES.md      dataset audit (Category A/B/C, per-source fields)
-  DATA_LICENSE.md         data/consent policy for external + collected data
-  RESPONSIBLE_AI.md       what this is/isn't, safety design, limitations
-  backend/                FastAPI app (recognition engine, vocabulary, templates, feedback)
-    app/data/             sign_metadata.csv, samples.csv, dataset_sources.csv
-    tests/                unit tests for the safety-critical logic
-  ml/                     landmark extraction + training pipeline
-    tests/                synthetic-fixture pipeline test (not real sign data)
-  frontend/                React + Vite app
-    src/pages/             Home, Live Translator, Conversation Mode,
-                            Healthcare Vocabulary, Dataset/Research Mode,
-                            About/Responsible AI
-  dataset/raw/             empty on purpose — see its README before adding videos
+backend/
+  app/main.py                  FastAPI app (loads the saved model on startup)
+  app/ml/features.py           landmark → feature vector (shared by live, training, import)
+  app/ml/trainer.py            training + cross-validation report
+  app/ml/classifier.py         loads model.joblib
+  app/services/recognition.py  threshold, stability, word emission
+  app/services/templates.py    offline Tamil/English sentence templates
+  app/services/vocabulary.py   built-in + custom words
+  app/services/sample_store.py recorded samples on disk
+  app/routers/                 /predict /signs /samples /train /translate
+  app/data/sign_metadata.csv   built-in vocabulary (generated by ml/generate_sign_metadata.py)
+  tests/                       unit + end-to-end API tests (synthetic landmarks)
+frontend/src/
+  mediapipe.js                 on-device hand + pose landmark extraction
+  components/CameraFeed.jsx    webcam, overlay, rolling landmark window
+  hooks/useSignRecognizer.js   live prediction + recognized word list
+  pages/                       Home, Translate, TeachSigns, ConversationMode, Vocabulary
+  i18n.js                      Tamil/English UI text
+ml/
+  import_videos.py             videos → training samples
+  train.py                     command-line training
+  generate_sign_metadata.py    rebuilds the built-in vocabulary CSV
+dataset/                       your data (git-ignored): landmarks/, models/, custom_signs.csv, raw/
 ```
 
-## The main demo (healthcare scenario)
+## Tests
 
-1. Home page → "Start Live Translator."
-2. Toggle Simulation Mode (until a real model is trained and loaded).
-3. Click **HELP** → emergency banner fires, bilingual text + speech.
-4. Switch to Conversation Mode → select **PAIN** + **STOMACH** → deterministic
-   template forms "I have stomach pain." / "எனக்கு வயிற்றில் வலி உள்ளது."
-5. Staff panel: type or speak "How long have you had the pain?" → logged
-   to the conversation transcript for the patient to see.
-6. About page: show the judges the Responsible AI page directly — the
-   explicit non-diagnosis disclaimer and limitations are part of the
-   pitch, not fine print.
+```bash
+cd backend && .venv/bin/python -m pytest tests -v
+cd frontend && npm run lint && npm run build
+```
 
-## Priority next steps for your team during the hackathon
+The backend tests include a full synthetic run: add a custom word → record samples for 3 signers → train → live predictions → sentence.
 
-1. Download the Tamil Sign Language Video Dataset (Kaggle) — the lowest
-   access-friction Category B source in `DATASET_SOURCES.md` — and
-   actually read its license before using it.
-2. If at all possible, get even one Tamil Nadu Deaf-community member,
-   interpreter, or special-education teacher to review a sample of signs
-   and confirm or correct them — this is worth more to your pitch than
-   any accuracy number.
-3. Record a small supplementary set yourselves via Dataset Collection Mode
-   for the 13 `priority_demo_candidate` concepts (help, emergency, doctor,
-   pain, water, etc. — see `/signs/demo-priority`), with at least 3
-   distinct signers so `train_classifier.py` can report a real, honest
-   test accuracy instead of the "too few signers" warning.
-4. Train, evaluate, and report the **confidence-threshold rejection
-   number** from `train_classifier.py` (not just raw accuracy) — that's
-   the defensible metric for your pitch.
-5. Wire the trained model into `backend/app/services/recognition.py`
-   (see `ml/README.md` step 4) and watch `NO_MODEL` become real
-   recognition.
+## Configuration
+
+| Env var | Default | Meaning |
+|---|---|---|
+| `SIGNBRIDGE_DATA_DIR` | `signbridge/dataset` | where samples, models and custom words are stored |
+| `SIGNBRIDGE_MIN_CONFIDENCE` | `0.70` | minimum classifier confidence to accept a sign |
+| `SIGNBRIDGE_STABILITY_WINDOW` | `4` | predictions (~250 ms each) that must mostly agree |
+| `SIGNBRIDGE_STABILITY_RATIO` | `0.75` | share of that window the word must win |
+| `VITE_API_BASE` (frontend `.env`) | `http://localhost:8000` | backend URL |
+
+To add sentence patterns, edit the dictionaries and `_FIXED` list in `backend/app/services/templates.py` and add a test in `tests/test_templates.py`. To add built-in words, append to `ml/generate_sign_metadata.py` and re-run it. Never reorder existing entries, because the IDs depend on their order.
+
+## Limitations & privacy
+
+- **A communication aid, not a certified interpreter, and not medical advice.** It restates what was signed and never adds a diagnosis or recommendation.
+- **Recognition is only as good as the recordings.** It works best for the people it was trained on; isolated words only (no continuous grammar or fingerspelling); similar-looking signs get confused unless recorded well.
+- **The Tamil text needs review.** Word translations, template grammar and staff phrases are hand-written and should be reviewed by a native Tamil speaker before real use. Signs themselves should be checked with Deaf signers.
+- **No video is stored or uploaded.** Only landmark coordinates are saved (under `dataset/landmarks/`, one file per recording, named by signer). Ask for consent before recording anyone else, and delete their files if they ask.
+- **Respect dataset licenses** when importing videos. Don't redistribute third-party data, and credit your sources.

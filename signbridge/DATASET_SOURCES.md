@@ -134,3 +134,16 @@ be conflated.
    under `validation_status`.
 4. Only signs with at least research-reference-level sourcing go into the
    demo. Anything without a traceable source is excluded, not guessed.
+
+## Importing a checked dataset
+
+Once a dataset passes the checks above, arrange (or map) its videos by word
+and import them as training samples. They mix with samples recorded on the
+Teach Signs page:
+
+```bash
+backend/.venv/bin/python ml/import_videos.py --data_dir <videos> [--flat --signer NAME] [--map map.csv]
+backend/.venv/bin/python ml/train.py
+```
+
+See `ml/README.md` for the folder layouts and the mapping CSV format.

@@ -1,43 +1,54 @@
 """Pydantic request/response models for the SignBridge API."""
 
 from __future__ import annotations
+
 from enum import Enum
 from typing import List, Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field, field_validator
+
+from app.ml.features import DEFAULT_ASPECT, NUM_HAND_POINTS, NUM_POSE_POINTS
 
 
 class RecognitionStatus(str, Enum):
-    NO_HAND = "NO_HAND"                # no hand detected in frame(s)
-    NO_MODEL = "NO_MODEL"              # no trained/validated model loaded - honest default
-    UNCERTAIN = "UNCERTAIN"            # below confidence threshold
-    UNSTABLE = "UNSTABLE"              # confidence ok but predictions not temporally stable yet
-    UNKNOWN_SIGN = "UNKNOWN_SIGN"      # model actively predicts "not a known class"
-    RECOGNIZED = "RECOGNIZED"          # accepted: confident + validated-source + temporally stable
+    NO_HAND = "NO_HAND"            # no hands in the camera window
+    NO_MODEL = "NO_MODEL"          # nothing trained yet
+    IDLE = "IDLE"                  # hands visible but resting (model's "_none" class)
+    UNCERTAIN = "UNCERTAIN"        # below confidence threshold
+    UNSTABLE = "UNSTABLE"          # confident, but not stable across recent ticks yet
+    UNKNOWN_SIGN = "UNKNOWN_SIGN"  # model label with no vocabulary entry
+    RECOGNIZED = "RECOGNIZED"      # confident + stable + in the vocabulary
 
 
-class LandmarkFrame(BaseModel):
-    """One frame's worth of hand landmarks, as extracted client-side by MediaPipe."""
-    hand_detected: bool
-    num_hands: int = 0
-    # Flat feature vector: up to 2 hands x 21 landmarks x (x,y,z) = up to 126 floats.
-    # Missing hands / frames are zero-filled by the client, matching the training pipeline.
-    features: List[float] = Field(default_factory=list)
+def _check_points(value, n: int, what: str):
+    if value is not None and (len(value) != n or any(len(p) < 3 for p in value)):
+        raise ValueError(f"{what} must have {n} [x, y, z] points")
+    return value
+
+
+class RawFrame(BaseModel):
+    """One camera frame of landmarks, as produced by frontend/src/mediapipe.js.
+    See app/ml/features.py for the exact meaning of each field."""
+    t: float = 0.0
+    left: Optional[List[List[float]]] = None
+    right: Optional[List[List[float]]] = None
+    pose: Optional[List[List[float]]] = None
+
+    @field_validator("left", "right")
+    @classmethod
+    def _hand(cls, v):
+        return _check_points(v, NUM_HAND_POINTS, "a hand")
+
+    @field_validator("pose")
+    @classmethod
+    def _pose(cls, v):
+        return _check_points(v, NUM_POSE_POINTS, "pose")
 
 
 class PredictRequest(BaseModel):
-    session_id: str = Field(..., description="Stable per-user/per-tab session id for temporal smoothing")
-    window: List[LandmarkFrame] = Field(..., description="A short sequence of recent frames (e.g. ~1 second)")
-    language: str = Field(default="both", pattern="^(ta|en|both)$")
-
-
-class SimulatePredictRequest(BaseModel):
-    """DEMO-ONLY endpoint: lets the UI walk through the full downstream pipeline
-    (confidence display, bilingual output, templates, emergency mode, conversation
-    log) using a manually chosen concept instead of a real camera + model. The
-    response is always clearly labeled simulated=True so it can never be
-    mistaken for a real recognition result."""
-    session_id: str
-    sign_id: str
+    session_id: str = Field(..., max_length=100)
+    window: List[RawFrame] = Field(..., max_length=300, description="The last ~1.5 s of frames")
+    aspect: float = Field(DEFAULT_ASPECT, gt=0.2, lt=5.0, description="Video width / height")
 
 
 class RecognitionCandidate(BaseModel):
@@ -49,7 +60,6 @@ class RecognitionCandidate(BaseModel):
 class PredictResponse(BaseModel):
     status: RecognitionStatus
     session_id: str
-    simulated: bool = False
     accepted_sign_id: Optional[str] = None
     accepted_concept: Optional[str] = None
     english: Optional[str] = None
@@ -59,45 +69,27 @@ class PredictResponse(BaseModel):
     message_en: str
     message_ta: str
     is_emergency: bool = False
-    disclaimer: str = (
-        "Communication assistance only. This system does not provide medical "
-        "diagnosis or medical advice."
-    )
+    new_word: bool = False
 
 
-class SignMetadataOut(BaseModel):
-    sign_id: str
-    concept: str
-    english: str
-    tamil: str
-    sign_language: str
-    source: str
-    validation_status: str
-    healthcare_category: str
-    static_or_dynamic: str
-    priority_demo_candidate: str
-    notes: str
+class SampleCreate(BaseModel):
+    concept: str = Field(..., max_length=60)
+    signer_id: str = Field(..., min_length=1, max_length=40)
+    frames: List[RawFrame] = Field(..., min_length=5, max_length=600)
+    aspect: float = Field(DEFAULT_ASPECT, gt=0.2, lt=5.0)
+    source: str = Field("webcam", max_length=200)
 
 
-class FeedbackRequest(BaseModel):
-    validator_id: str
-    sign_id: str
-    prediction: str
-    decision: str = Field(..., pattern="^(correct|incorrect|different_sign|unsure)$")
-    comment: Optional[str] = None
+class SignCreate(BaseModel):
+    english: str = Field(..., min_length=1, max_length=60)
+    tamil: str = Field(..., min_length=1, max_length=120)
+    category: str = Field("CUSTOM", max_length=40)
+    is_emergency: bool = False
 
 
-class DatasetSampleRegisterRequest(BaseModel):
-    sign_id: str
-    signer_id: str
-    source: str = "community_collected"
-    frame_count: Optional[int] = None
-    fps: Optional[int] = None
-    consent_confirmed: bool = Field(
-        ..., description="Must be true - the UI must not allow submission without explicit consent"
-    )
+class TranslateRequest(BaseModel):
+    words: List[str] = Field(..., max_length=50)
 
 
-class TemplateRequest(BaseModel):
-    concept_slugs: List[str]
-    language: str = Field(default="both", pattern="^(ta|en|both)$")
+class TextToSignsRequest(BaseModel):
+    text: str = Field(..., max_length=500)

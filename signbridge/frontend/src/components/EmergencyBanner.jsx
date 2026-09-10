@@ -1,15 +1,15 @@
 import React from "react";
-import { useLanguage } from "../LanguageContext.jsx";
+import { Bi, T } from "./Bilingual.jsx";
 
 export default function EmergencyBanner({ englishText, tamilText }) {
-  const { lang } = useLanguage();
   return (
     <div className="emergency-banner" role="alert">
-      <span>🚨</span>
+      <span className="siren">🚨</span>
       <div>
-        <div>{lang !== "en" ? "தொடர்பு எச்சரிக்கை" : "COMMUNICATION ALERT"}</div>
-        {(lang === "ta" || lang === "both") && <div style={{ fontWeight: 600 }}>{tamilText}</div>}
-        {(lang === "en" || lang === "both") && <div style={{ fontWeight: 600 }}>{englishText}</div>}
+        <div className="emergency-title">
+          <T k="emergencyAlertTitle" />
+        </div>
+        <Bi tamil={tamilText} english={englishText} />
       </div>
     </div>
   );

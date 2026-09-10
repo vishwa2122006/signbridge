@@ -1,54 +1,89 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useLanguage } from "../LanguageContext.jsx";
+import { T } from "../components/Bilingual.jsx";
+
+const EXAMPLES = [
+  { sign: "👋", tamil: "வணக்கம்", english: "Hello" },
+  { sign: "🥛", tamil: "எனக்கு தண்ணீர் வேண்டும்.", english: "I want water." },
+  { sign: "🤕", tamil: "எனக்கு வயிற்றில் வலி உள்ளது.", english: "I have stomach pain." },
+  { sign: "🙏", tamil: "நன்றி", english: "Thank you" },
+];
+
+const STEPS = [
+  { to: "/teach", icon: "🎓", title: "step1Title", body: "step1Body", hue: 38 },
+  { to: "/translate", icon: "🤟", title: "step2Title", body: "step2Body", hue: 170 },
+  { to: "/conversation", icon: "💬", title: "step3Title", body: "step3Body", hue: 330 },
+];
+
+const FEATURES = [
+  { icon: "🔒", key: "privacyNote", hue: 265 },
+  { icon: "📴", key: "offlineNote", hue: 200 },
+  { icon: "➕", key: "customNote", hue: 140 },
+];
 
 export default function Home() {
-  const { lang } = useLanguage();
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setIndex((i) => (i + 1) % EXAMPLES.length), 2800);
+    return () => clearInterval(id);
+  }, []);
+
+  const example = EXAMPLES[index];
+
   return (
     <div>
-      <div className="disclaimer-banner">
-        {lang !== "en"
-          ? "தொடர்பு உதவி மட்டுமே. இந்த அமைப்பு மருத்துவ நோய் கண்டறிதலை வழங்காது."
-          : "Communication assistance only. This system does not provide medical diagnosis or medical advice."}
-        {" — "}
-        {lang !== "en" ? "முன்மாதிரி." : "Prototype."}
-      </div>
-
-      <div className="card" style={{ textAlign: "center" }}>
-        <h2 style={{ fontSize: "1.6rem" }}>
-          {lang !== "en" ? "நோயாளி மருத்துவமனையில் நுழைகிறார்..." : "A Deaf patient enters a hospital..."}
+      <section className="card hero">
+        <span className="hero-badge">
+          ✨ <T k="heroBadge" />
+        </span>
+        <h2 className="grad-text">
+          <T k="homeTitle" />
         </h2>
-        <p style={{ color: "var(--text-dim)", maxWidth: 560, margin: "0.5rem auto 1.5rem" }}>
-          {lang !== "en"
-            ? "வரவேற்பாளருக்கு சைகை மொழி தெரியாது. SignBridge இந்த இடைவெளியை நிரப்புகிறது."
-            : "The receptionist doesn't know sign language. SignBridge helps bridge that gap."}
+        <p className="dim hero-body">
+          <T k="homeBody" />
         </p>
-        <Link to="/live">
-          <button style={{ fontSize: "1.3rem", padding: "1em 2em" }}>
-            📷 {lang !== "en" ? "நேரடி மொழிபெயர்ப்பைத் தொடங்கு" : "Start Live Translator"}
+
+        <div className="demo" aria-live="polite">
+          <span className="demo-sign float" key={`sign-${index}`}>
+            {example.sign}
+          </span>
+          <span className="demo-arrow">➜</span>
+          <div className="demo-bubble" key={`text-${index}`}>
+            <div className="demo-ta">{example.tamil}</div>
+            <div className="demo-en">{example.english}</div>
+          </div>
+        </div>
+
+        <Link to="/translate">
+          <button className="large">
+            📷 <T k="startTranslating" />
           </button>
         </Link>
-      </div>
+      </section>
 
       <div className="grid cols-3">
-        <Link to="/conversation" className="card" style={{ textDecoration: "none", color: "inherit" }}>
-          <h3>💬 {lang !== "en" ? "உரையாடல் முறை" : "Conversation Mode"}</h3>
-          <p style={{ color: "var(--text-dim)" }}>
-            {lang !== "en" ? "நோயாளி மற்றும் ஊழியர் இடையே இரு திசை தொடர்பு." : "Two-way exchange between patient and staff."}
-          </p>
-        </Link>
-        <Link to="/vocabulary" className="card" style={{ textDecoration: "none", color: "inherit" }}>
-          <h3>📖 {lang !== "en" ? "சுகாதார சொல்லகராதி" : "Healthcare Vocabulary"}</h3>
-          <p style={{ color: "var(--text-dim)" }}>
-            {lang !== "en" ? "ஆதரிக்கப்படும் கருத்துக்களையும் அவற்றின் சரிபார்ப்பு நிலையையும் உலாவவும்." : "Browse supported concepts and their validation status."}
-          </p>
-        </Link>
-        <Link to="/about" className="card" style={{ textDecoration: "none", color: "inherit" }}>
-          <h3>ℹ️ {lang !== "en" ? "பொறுப்பான AI" : "Responsible AI"}</h3>
-          <p style={{ color: "var(--text-dim)" }}>
-            {lang !== "en" ? "இந்த முன்மாதிரி என்ன செய்யும், என்ன செய்யாது." : "What this prototype does and does not do."}
-          </p>
-        </Link>
+        {STEPS.map((step, i) => (
+          <Link key={step.to} to={step.to} className="card step-card" style={{ "--hue": step.hue }}>
+            <span className="step-num">{i + 1}</span>
+            <div className="step-icon">{step.icon}</div>
+            <h3>
+              <T k={step.title} />
+            </h3>
+            <p className="dim flush">
+              <T k={step.body} />
+            </p>
+          </Link>
+        ))}
+      </div>
+
+      <div className="feature-row">
+        {FEATURES.map((feature) => (
+          <div key={feature.key} className="feature" style={{ "--hue": feature.hue }}>
+            <span className="feature-icon">{feature.icon}</span>
+            <T k={feature.key} />
+          </div>
+        ))}
       </div>
     </div>
   );

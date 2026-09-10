@@ -1,7 +1,7 @@
 # dataset/raw/
 
-Put validated sign videos here, one folder per sign concept slug (matching
-`sign_id`/`concept` in `backend/app/data/sign_metadata.csv`), one subfolder
+Optional: sign videos to import with `ml/import_videos.py`. One folder per
+word (a vocabulary concept slug, or `_none` for idle clips), one subfolder
 per signer:
 
 ```
@@ -16,7 +16,12 @@ dataset/raw/
             ...
 ```
 
-Do not add a folder here until the concept's source is recorded in
-`DATASET_SOURCES.md` or it was collected via the in-app Dataset Collection
-Mode with recorded consent. This directory is intentionally empty in the
-delivered prototype — no fabricated or unverified sign videos are included.
+Then, from the `signbridge/` folder:
+
+```bash
+backend/.venv/bin/python ml/import_videos.py --data_dir dataset/raw
+```
+
+See `ml/README.md` for flat layouts and mapping dataset folder names to
+words. Only add videos you're allowed to use: record with consent and check
+the licenses of downloaded datasets (see `DATASET_SOURCES.md`).
