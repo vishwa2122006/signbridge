@@ -25,6 +25,7 @@ const CODE_KEYS = {
   word_pending: "errWordPending",
   word_not_approved: "errWordNotApproved",
   nothing_to_submit: "errNothingToSubmit",
+  no_recordings: "errNoRecordings",
   already_reviewed: "errAlreadyReviewed",
   not_allowed: "errNotAllowed",
 };
@@ -44,6 +45,24 @@ export default function ErrorNote({ error, wordOf }) {
     return (
       <div className="note error" role="alert">
         ⚠️ <T k={key} vars={error.vars || detail} />
+      </div>
+    );
+  }
+
+  if (detail?.code === "sign_already_used") {
+    const word = wordOf?.(detail.word) ?? { english: detail.english, tamil: detail.tamil };
+    return (
+      <div className="note error" role="alert">
+        ⚠️{" "}
+        <T
+          k={detail.recorded === "_none" ? "errIdleLooksLikeSign" : "errSignAlreadyUsed"}
+          vars={{ pct: Math.round(detail.confidence * 100) }}
+        />
+        <span className="chips inline">
+          <span className="chip low">
+            <Bi {...word} />
+          </span>
+        </span>
       </div>
     );
   }

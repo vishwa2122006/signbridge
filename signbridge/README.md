@@ -90,10 +90,13 @@ Open the printed URL (http://localhost:5173).
    - Log in and start the camera.
    - Pick a word, or propose a new one with English + Tamil text. You can record it straight away; others see it once an admin approves it.
    - Press **Record 10** and perform the sign each time the countdown ends. Record **Idle (no sign)** samples too: hands resting or moving naturally.
+   - A recording that the trained model recognizes as a *different* word (at least 85% sure) isn't saved: that sign already belongs to that word, and the error names it. Idle recordings that look like a sign are refused the same way. Only words the current model was trained on can be matched.
    - Recordings stay private drafts, so you can delete bad takes. Then press **Submit for review**.
 2. **Review & Train** (admins)
    - Pick a word from the queue. Its recordings are grouped by trainer. ▶ replays each one as a moving hand-and-body figure; the ✋ percentage is the share of frames where hands were visible.
-   - Mark recordings ✓ or ✕ one at a time, per trainer, or all at once. Add a note for rejections and press **Save review**: each trainer gets one email for the whole batch. A proposed word must be approved before its recordings can be.
+   - Mark recordings ✓ or ✕ one at a time, per trainer, or everything in the list shown (e.g. the **Approved** filter + **Reject all** takes back approvals).
+   - **Delete all recordings** removes every recording of the word, from all trainers and in any status; the word stays and the trainers are emailed. Train again afterwards so the model forgets them.
+   - Add a note for rejections and press **Save review**: each trainer gets one email for the whole batch. A proposed word must be approved before its recordings can be.
    - Press **Train model**. Only approved recordings of approved words are used. You'll see cross-validated accuracy and per-word scores, plus warnings, e.g. too few signers.
 3. **Translate**: start the camera and sign. Words appear as chips; the sentence updates automatically; 🔊 speaks it.
 4. **Conversation**: the signer signs and presses Send; the hearing person taps a bilingual quick phrase, types, or dictates.
@@ -182,6 +185,7 @@ The backend tests need `TEST_DATABASE_URL` in `backend/.env`: a separate databas
 | `SIGNBRIDGE_MIN_CONFIDENCE` | `0.70` | minimum classifier confidence to accept a sign |
 | `SIGNBRIDGE_STABILITY_WINDOW` | `4` | predictions (~250 ms each) that must mostly agree |
 | `SIGNBRIDGE_STABILITY_RATIO` | `0.75` | share of that window the word must win |
+| `SIGNBRIDGE_DUPLICATE_CONFIDENCE` | `0.85` | a new recording the model recognizes as another word this confidently isn't saved |
 | `VITE_API_BASE` (frontend `.env`) | `http://localhost:8000` | backend URL |
 
 To add sentence patterns, edit the dictionaries and `_FIXED` list in `backend/app/services/templates.py` and add a test in `tests/test_templates.py`. To add built-in words, append to `ml/generate_sign_metadata.py` and re-run it. Never reorder existing entries, because the IDs depend on their order.

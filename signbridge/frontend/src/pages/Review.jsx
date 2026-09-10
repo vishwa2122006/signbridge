@@ -311,6 +311,7 @@ function WordReview({ concept, wordOf, onChanged }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [savedCount, setSavedCount] = useState(null);
+  const [deletedCount, setDeletedCount] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -369,7 +370,7 @@ function WordReview({ concept, wordOf, onChanged }) {
   const idsMarked = (status) => Object.keys(decisions).filter((id) => decisions[id] === status).map(Number);
   const approveIds = idsMarked("approved");
   const rejectIds = idsMarked("rejected");
-  const waiting = shown.filter((s) => s.status === "pending");
+  const allHave = (list, status) => list.every((s) => s.status === status);
 
   const save = async () => {
     setSaving(true);
@@ -385,6 +386,21 @@ function WordReview({ concept, wordOf, onChanged }) {
       setError(e);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const deleteAll = async () => {
+    if (!window.confirm(t("confirmDeleteRecordings", lang, { n: counts.all }))) return;
+    setError(null);
+    setSavedCount(null);
+    setDeletedCount(null);
+    try {
+      const res = await api.deleteWordRecordings(concept);
+      setDecisions({});
+      setDeletedCount(res.deleted);
+      reload();
+    } catch (e) {
+      setError(e);
     }
   };
 
@@ -410,7 +426,18 @@ function WordReview({ concept, wordOf, onChanged }) {
             <T k={`filter_${f}`} /> <span className="badge">{counts[f]}</span>
           </button>
         ))}
+        <span className="spacer" />
+        {counts.all > 0 && (
+          <button className="danger small" onClick={deleteAll} disabled={saving}>
+            🗑 <T k="deleteAllRecordings" />
+          </button>
+        )}
       </div>
+      {deletedCount !== null && (
+        <div className="note ok">
+          🗑 <T k="recordingsDeleted" vars={{ n: deletedCount }} />
+        </div>
+      )}
 
       {approveBlocked && counts.all > 0 && (
         <div className="note warn">
@@ -422,15 +449,19 @@ function WordReview({ concept, wordOf, onChanged }) {
           ✅ <T k="reviewSaved" vars={{ n: savedCount }} />
         </div>
       )}
-      {waiting.length > 0 && (
+      {shown.length > 0 && (
         <div className="toolbar">
           <span className="small dim">
-            <T k="markAllPending" />
+            <T k="markAllShown" vars={{ n: shown.length }} />
           </span>
-          <button className="secondary small" onClick={() => markAll(waiting, "approved")} disabled={approveBlocked}>
+          <button
+            className="secondary small"
+            onClick={() => markAll(shown, "approved")}
+            disabled={approveBlocked || allHave(shown, "approved")}
+          >
             ✓ <T k="approveAll" />
           </button>
-          <button className="secondary small" onClick={() => markAll(waiting, "rejected")}>
+          <button className="secondary small" onClick={() => markAll(shown, "rejected")} disabled={allHave(shown, "rejected")}>
             ✕ <T k="rejectAll" />
           </button>
         </div>
@@ -442,7 +473,6 @@ function WordReview({ concept, wordOf, onChanged }) {
         </p>
       ) : (
         groups.map((group) => {
-          const groupWaiting = group.samples.filter((s) => s.status === "pending");
           return (
             <section key={group.key} className="trainer-group">
               <div className="trainer-head">
@@ -452,16 +482,20 @@ function WordReview({ concept, wordOf, onChanged }) {
                   {group.trainer && <div className="small dim">{group.trainer.email}</div>}
                 </div>
                 <span className="count-pill">{group.samples.length}</span>
-                {groupWaiting.length > 0 && (
-                  <>
-                    <button className="secondary small" onClick={() => markAll(groupWaiting, "approved")} disabled={approveBlocked}>
-                      ✓ <T k="all" />
-                    </button>
-                    <button className="secondary small" onClick={() => markAll(groupWaiting, "rejected")}>
-                      ✕ <T k="all" />
-                    </button>
-                  </>
-                )}
+                <button
+                  className="secondary small"
+                  onClick={() => markAll(group.samples, "approved")}
+                  disabled={approveBlocked || allHave(group.samples, "approved")}
+                >
+                  ✓ <T k="all" />
+                </button>
+                <button
+                  className="secondary small"
+                  onClick={() => markAll(group.samples, "rejected")}
+                  disabled={allHave(group.samples, "rejected")}
+                >
+                  ✕ <T k="all" />
+                </button>
               </div>
               <div className="recording-grid">
                 {group.samples.map((sample) => (

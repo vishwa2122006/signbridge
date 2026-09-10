@@ -411,7 +411,16 @@ export const STRINGS = {
   filter_approved: { en: "Approved", ta: "ஏற்கப்பட்டவை" },
   filter_rejected: { en: "Rejected", ta: "நிராகரிக்கப்பட்டவை" },
   filter_all: { en: "All", ta: "அனைத்தும்" },
-  markAllPending: { en: "Mark every waiting recording:", ta: "காத்திருக்கும் அனைத்துப் பதிவுகளையும்:" },
+  markAllShown: { en: "Mark all {n} shown:", ta: "காட்டப்படும் {n} பதிவுகளையும்:" },
+  deleteAllRecordings: { en: "Delete all recordings", ta: "அனைத்துப் பதிவுகளையும் நீக்கு" },
+  confirmDeleteRecordings: {
+    en: "Delete every recording of this word from all trainers ({n} submitted, plus any unsubmitted drafts)? The word stays. This can't be undone.",
+    ta: "இந்தச் சொல்லின் அனைத்துப் பயிற்சியாளர்களின் பதிவுகளையும் நீக்கவா ({n} சமர்ப்பிக்கப்பட்டவை, சமர்ப்பிக்கப்படாத வரைவுகளும்)? சொல் அப்படியே இருக்கும். இதைத் திரும்பப் பெற முடியாது.",
+  },
+  recordingsDeleted: {
+    en: "Deleted {n} recordings and emailed the trainers. Train the model again so it forgets them.",
+    ta: "{n} பதிவுகள் நீக்கப்பட்டு பயிற்சியாளர்களுக்கு மின்னஞ்சல் அனுப்பப்பட்டது. மாதிரி அவற்றை மறக்க மீண்டும் பயிற்சி அளியுங்கள்.",
+  },
   approveAll: { en: "Approve all", ta: "அனைத்தையும் ஏற்கவும்" },
   rejectAll: { en: "Reject all", ta: "அனைத்தையும் நிராகரி" },
   all: { en: "All", ta: "அனைத்தும்" },
@@ -499,6 +508,16 @@ export const STRINGS = {
     en: "Approve the word itself before approving its recordings.",
     ta: "பதிவுகளை ஏற்பதற்கு முன் சொல்லை ஏற்கவும்.",
   },
+  errSignAlreadyUsed: {
+    en: "Not saved: this sign already belongs to another word ({pct}% match). Show this word's own sign. It matched:",
+    ta: "சேமிக்கப்படவில்லை: இந்தச் சைகை ஏற்கனவே வேறொரு சொல்லுக்குரியது ({pct}% பொருத்தம்). இந்தச் சொல்லுக்குரிய சைகையைச் செய்யுங்கள். பொருந்திய சொல்:",
+  },
+  errIdleLooksLikeSign: {
+    en: "Not saved: this looks like a sign ({pct}% match), not resting hands. Idle recordings must not show a sign. It matched:",
+    ta: "சேமிக்கப்படவில்லை: இது ஓய்வான கைகளாக அல்ல, ஒரு சைகையாகத் தெரிகிறது ({pct}% பொருத்தம்). ஓய்வுப் பதிவுகளில் சைகை இருக்கக்கூடாது. பொருந்திய சொல்:",
+  },
+  switchToWord: { en: "Record it for", ta: "இதற்காகப் பதிவு செய்" },
+  errNoRecordings: { en: "This word has no recordings.", ta: "இந்தச் சொல்லுக்குப் பதிவுகள் இல்லை." },
   errNothingToSubmit: { en: "There are no draft recordings to submit.", ta: "சமர்ப்பிக்க வரைவுப் பதிவுகள் இல்லை." },
   errAlreadyReviewed: { en: "Reviewed recordings can't be deleted.", ta: "சரிபார்க்கப்பட்ட பதிவுகளை நீக்க முடியாது." },
   errNotAllowed: {

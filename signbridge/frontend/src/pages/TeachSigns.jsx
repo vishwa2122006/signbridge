@@ -340,6 +340,17 @@ export default function TeachSigns() {
           </div>
 
           <ErrorNote error={error} wordOf={wordOf} />
+          {error?.detail?.code === "sign_already_used" && error.detail.recorded !== NONE && bySlug[error.detail.word] && (
+            <button
+              className="secondary small"
+              onClick={() => {
+                selectWord(error.detail.word);
+                setError(null);
+              }}
+            >
+              ➜ <T k="switchToWord" /> <Bi {...wordOf(error.detail.word)} />
+            </button>
+          )}
           {notice && (
             <div className="note ok">
               ✅ <T k={noticeKey} /> {notice.count ? <b>{notice.count} ×</b> : null} <Bi {...wordOf(notice.concept)} />

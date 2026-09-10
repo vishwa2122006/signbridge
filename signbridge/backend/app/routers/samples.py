@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy import select
@@ -13,6 +13,8 @@ from app.models.schemas import SampleCreate, SubmitRequest
 from app.models.tables import APPROVED, DRAFT, PENDING, Sample, User, Word, utcnow
 from app.routers.deps import require_user
 from app.services import notifications, sample_store
+from app.services.recognition import engine
+from app.services.vocabulary import vocabulary
 
 router = APIRouter()
 
@@ -32,6 +34,24 @@ def _word_to_record(db: Session, concept: str, user: User) -> Optional[Word]:
     return word
 
 
+def _reject_another_words_sign(concept: str, frames: List[dict], aspect: float):
+    """Validation: a recording the trained model confidently recognizes as a different word
+    isn't saved, so two words never share one sign and Idle recordings stay sign-free.
+    Only words the current model was trained on can be matched."""
+    match = engine.best_match({"frames": frames, "aspect": aspect})
+    if match is None:
+        return
+    label, confidence = match
+    other = vocabulary.get_by_concept(label)
+    if label in (concept, config.NONE_LABEL) or other is None or confidence < config.DUPLICATE_SIGN_CONFIDENCE:
+        return
+    raise ApiError(
+        409, "sign_already_used",
+        f"Not saved: this sign matches '{other['english']}' ({confidence:.0%}), which already has its own sign.",
+        word=label, english=other["english"], tamil=other["tamil"], confidence=round(confidence, 3), recorded=concept,
+    )
+
+
 def _own_sample(db: Session, sample_id: int, user: User) -> Sample:
     sample = db.get(Sample, sample_id)
     if sample is None or not (user.is_admin or sample.user_id == user.id):
@@ -49,6 +69,7 @@ def create_sample(req: SampleCreate, user: User = Depends(require_user), db: Ses
     if word is not None and sample_store.count_hand_frames(frames) < len(frames) * MIN_HAND_FRAME_RATIO:
         raise ApiError(422, "no_hands",
                        "Hands were not visible in most of this recording - keep your hands inside the camera view.")
+    _reject_another_words_sign(req.concept, frames, req.aspect)
     sample = sample_store.save_sample(db, word, frames, req.aspect, status=APPROVED if user.is_admin else DRAFT,
                                       user=user, source=req.source)
     db.commit()

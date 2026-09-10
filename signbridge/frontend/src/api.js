@@ -116,6 +116,8 @@ export const api = {
   // admin
   reviewQueue: () => request("/review/words"),
   wordRecordings: (concept) => request(`/review/words/${encodeURIComponent(concept)}/samples`),
+  deleteWordRecordings: (concept) =>
+    request(`/review/words/${encodeURIComponent(concept)}/samples`, { method: "DELETE" }),
   reviewSamples: (approve, reject, note) => post("/review/samples", { approve, reject, note }),
   reviewWord: (signId, action, note) => post(`/review/words/${encodeURIComponent(signId)}`, { action, note }),
   listUsers: () => request("/admin/users"),

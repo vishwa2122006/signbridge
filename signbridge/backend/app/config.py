@@ -66,6 +66,10 @@ MIN_CONFIDENCE = float(os.environ.get("SIGNBRIDGE_MIN_CONFIDENCE", "0.70"))
 STABILITY_WINDOW = int(os.environ.get("SIGNBRIDGE_STABILITY_WINDOW", "4"))
 STABILITY_RATIO = float(os.environ.get("SIGNBRIDGE_STABILITY_RATIO", "0.75"))
 
+# Recording validation: a new recording the trained model recognizes as a different
+# word with at least this confidence isn't saved (that sign already belongs to that word).
+DUPLICATE_SIGN_CONFIDENCE = float(os.environ.get("SIGNBRIDGE_DUPLICATE_CONFIDENCE", "0.85"))
+
 # Login tokens
 JWT_SECRET = os.environ.get("JWT_SECRET", "").strip()
 if not JWT_SECRET:

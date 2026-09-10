@@ -99,6 +99,7 @@ THEMES = {
     "review": Theme("#6d28d9", "#f1ebff", "📋"),
     "approved": Theme("#15803d", "#dcfce7", "✅"),
     "rejected": Theme("#b91c1c", "#fee2e2", "🔁"),
+    "deleted": Theme("#475569", "#e2e8f0", "🗑️"),
 }
 
 _FONT = "'Segoe UI',Roboto,'Noto Sans Tamil','Noto Sans',Helvetica,Arial,sans-serif"
@@ -496,6 +497,38 @@ def review_summary(reviewer: str, per_trainer: Sequence[Tuple[Person, int, int]]
         stats=[(approved, "Approved", "approved"), (rejected, "Rejected", "rejected")],
         rows=[Row(p.name, p.email, chip=f"✓ {a}   ✕ {r}") for p, a, r in per_trainer],
         note=("Note for the rejected recordings", note) if note and rejected else None,
+        action=("Open Review & Train", _link("/review")),
+        footer=ADMIN_FOOTER,
+    ))
+
+
+def recordings_deleted(reviewer: str, label: str, per_trainer: Sequence[Tuple[Person, int]], total: int,
+                       admins: List[str]):
+    english, tamil = _word(label)
+    for trainer, count in per_trainer:
+        _send([trainer.email], f"Recordings removed: {english}", Email(
+            theme="deleted",
+            badge="Recordings removed",
+            title=f"Recordings of “{english}” were removed",
+            title_ta="இந்தச் சொல்லின் பதிவுகள் நீக்கப்பட்டன",
+            preheader=f"{reviewer} removed every recording of “{english}”, including {_plural(count, 'recording')} of yours.",
+            greeting=f"Hi {trainer.name},",
+            intro=[f"{reviewer} removed every recording of this word, including {_plural(count, 'recording')} of yours:"],
+            rows=[Row(english, tamil, chip=f"🗑 {count}")],
+            outro=["This usually means the word is being recorded again from scratch. You're welcome to record it again."],
+            action=("Open Teach Signs", _link("/teach")),
+            footer=TRAINER_FOOTER,
+        ))
+    _send(admins, f"Recordings deleted: {_plural(total, 'recording')} of {english}", Email(
+        theme="deleted",
+        badge="Recordings deleted",
+        title=f"{reviewer} deleted {_plural(total, 'recording')}",
+        title_ta="பதிவுகள் நீக்கப்பட்டன",
+        preheader=f"Every recording of “{english}” was deleted.",
+        intro=["Every recording of this word was deleted, from all trainers:"],
+        rows=[Row(english, tamil, chip=f"🗑 {total}")],
+        details=[(f"{p.name} ({p.email})", _plural(n, "recording")) for p, n in per_trainer],
+        outro=["The trained model still knows these recordings until it's trained again."],
         action=("Open Review & Train", _link("/review")),
         footer=ADMIN_FOOTER,
     ))

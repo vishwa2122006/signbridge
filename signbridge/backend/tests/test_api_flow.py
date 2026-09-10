@@ -159,6 +159,14 @@ def test_record_review_train_predict_translate():
         signs = {s["concept"]: s for s in client.get("/signs").json()}
         assert signs["water"]["trained"] and signs["water"]["samples"] == SIGNERS * SAMPLES_PER_SIGNER
 
+        # validation: a sign the model already knows for another word isn't saved
+        r = client.post("/samples", headers=trainers[1], json={"concept": "water", "frames": make_clip("hello", 1, rng)})
+        assert r.status_code == 409, r.text
+        assert r.json()["detail"]["code"] == "sign_already_used" and r.json()["detail"]["word"] == "hello"
+        r = client.post("/samples", headers=trainers[1], json={"concept": NONE_LABEL, "frames": make_clip("water", 1, rng)})
+        assert r.status_code == 409 and r.json()["detail"]["word"] == "water"  # Idle must not be a sign
+        assert post_clip(client, trainers[1], "water", 1, rng).status_code == 200  # the word's own sign is fine
+
         # live prediction: a held sign is emitted exactly once
         results = [
             client.post("/predict", json={"session_id": "live", "window": make_clip("water", 1, rng)}).json()
@@ -186,6 +194,25 @@ def test_record_review_train_predict_translate():
         # sentence
         sentence = client.post("/translate", json={"words": ["want", "water"]}).json()
         assert sentence["english"] == "I want water." and sentence["tamil"] == "எனக்கு தண்ணீர் வேண்டும்."
+
+        # an admin can reject recordings that were already approved
+        approved_water = [s["id"] for s in client.get("/review/words/water/samples", headers=admin).json()["samples"]
+                          if s["status"] == "approved"]
+        r = client.post("/review/samples", headers=admin, json={"reject": approved_water, "note": "Re-recording"})
+        assert r.status_code == 200 and r.json()["updated"] == SIGNERS * SAMPLES_PER_SIGNER
+        assert {s["concept"]: s for s in client.get("/signs").json()}["water"]["samples"] == 0
+
+        # ... or delete every recording of a word, from all trainers
+        mailer.outbox.clear()
+        assert client.delete("/review/words/hello/samples", headers=trainers[0]).status_code == 403
+        r = client.delete("/review/words/hello/samples", headers=admin)
+        assert r.status_code == 200 and r.json()["deleted"] == SIGNERS * SAMPLES_PER_SIGNER
+        assert "hello" not in client.get("/samples/stats", headers=trainers[0]).json()
+        assert "hello" not in {w["concept"] for w in client.get("/review/words", headers=admin).json()}
+        assert sorted(m["subject"] for m in mailer.outbox) == ["Recordings deleted: 18 recordings of Hello"] + [
+            "Recordings removed: Hello"] * SIGNERS
+        r = client.delete("/review/words/hello/samples", headers=admin)
+        assert r.status_code == 404 and r.json()["detail"]["code"] == "no_recordings"
 
         # an approved word can only be deleted by an admin, together with its recordings; built-ins can't be
         assert client.delete(f"/signs/{custom['sign_id']}", headers=trainers[0]).status_code == 403

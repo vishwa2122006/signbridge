@@ -72,6 +72,14 @@ class RecognitionEngine:
         probs = self.model.predict(window)
         return sorted(((label, float(p)) for label, p in zip(self.labels, probs)), key=lambda x: x[1], reverse=True)
 
+    def best_match(self, clip) -> Optional[Tuple[str, float]]:
+        """The model's best (label, confidence) for a whole recording, or None without a model."""
+        if not self.model_loaded:
+            return None
+        predict = getattr(self.model, "predict_clip", self.model.predict)
+        label, confidence = max(zip(self.labels, predict(clip)), key=lambda pair: pair[1])
+        return label, float(confidence)
+
     @staticmethod
     def _candidates(ranked: List[Tuple[str, float]]) -> List[RecognitionCandidate]:
         out = []

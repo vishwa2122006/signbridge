@@ -707,6 +707,7 @@ button.secondary.toggled { background: rgba(46, 230, 197, 0.28); border-color: r
 .filter-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.9rem 0 0.4rem; }
 .filter-chips button { padding: 0.4em 0.9em; font-size: 0.85rem; background: var(--glass-2); border-color: var(--line); color: var(--text); box-shadow: none; }
 .filter-chips button.active { background: var(--grad-brand); color: #fff; border-color: transparent; }
+.filter-chips button.danger { background: linear-gradient(135deg, #ff5470, #ff8a3d); color: #fff; border-color: transparent; }
 
 .trainer-group { margin-top: 1.1rem; padding-top: 0.9rem; border-top: 1px dashed var(--line); }
 .trainer-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 0.7rem; }

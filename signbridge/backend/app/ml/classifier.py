@@ -60,6 +60,11 @@ class SignClassifier:
                 meta = json.load(f)
         return cls(bundle["estimator"], bundle["labels"], meta, bundle.get("window_ms"))
 
+    def predict_clip(self, clip: dict) -> np.ndarray:
+        """Probabilities for one whole recording, the way recordings were trained (no cropping)."""
+        vector = features.clip_vector(clip["frames"], clip.get("aspect") or features.DEFAULT_ASPECT)
+        return self.estimator.predict_proba(vector[None, :])[0]
+
     def predict(self, window: dict) -> np.ndarray:
         """window = {"frames": [raw frame, ...], "aspect": width / height}: the last few seconds of camera frames."""
         frames = window["frames"]

@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.orm import Session, aliased
 
 from app import config
@@ -75,20 +75,29 @@ def review_queue(db: Session = Depends(get_db)):
     return queue
 
 
+def _word_or_idle(db: Session, concept: str) -> Optional[Word]:
+    if concept == config.NONE_LABEL:
+        return None
+    word = db.scalar(select(Word).where(Word.concept == concept))
+    if word is None:
+        raise ApiError(404, "unknown_word", "Unknown word")
+    return word
+
+
+def _recordings_of(word: Optional[Word]):
+    return Sample.word_id.is_(None) if word is None else Sample.word_id == word.id
+
+
 @router.get("/words/{concept}/samples")
 def word_recordings(concept: str, db: Session = Depends(get_db)):
     """A word's submitted recordings and who recorded them. No frames: GET /samples/{id} replays one."""
-    word = None
-    if concept != config.NONE_LABEL:
-        word = db.scalar(select(Word).where(Word.concept == concept))
-        if word is None:
-            raise ApiError(404, "unknown_word", "Unknown word")
+    word = _word_or_idle(db, concept)
     reviewer = aliased(User)
     query = (
         select(Sample, User, reviewer.name)
         .outerjoin(User, Sample.user_id == User.id)
         .outerjoin(reviewer, Sample.reviewed_by_id == reviewer.id)
-        .where(Sample.status != DRAFT, Sample.word_id.is_(None) if word is None else Sample.word_id == word.id)
+        .where(Sample.status != DRAFT, _recordings_of(word))
         .order_by(Sample.created_at)
     )
     return {
@@ -112,6 +121,28 @@ def word_recordings(concept: str, db: Session = Depends(get_db)):
             for sample, trainer, reviewer_name in db.execute(query)
         ],
     }
+
+
+@router.delete("/words/{concept}/samples")
+def delete_word_recordings(concept: str, background: BackgroundTasks, admin: User = Depends(require_admin),
+                           db: Session = Depends(get_db)):
+    """Deletes every recording of a word: all trainers, any status, drafts included. The word itself
+    stays, and the trained model keeps what it learned until it's trained again."""
+    word = _word_or_idle(db, concept)
+    per_user = db.execute(
+        select(Sample.user_id, func.count()).where(_recordings_of(word)).group_by(Sample.user_id)
+    ).all()
+    total = sum(count for _, count in per_user)
+    if not total:
+        raise ApiError(404, "no_recordings", "This word has no recordings.")
+    db.execute(delete(Sample).where(_recordings_of(word)))
+    db.commit()
+
+    counts = {user_id: count for user_id, count in per_user if user_id is not None}
+    trainers = [(notifications.person(u), counts[u.id]) for u in db.scalars(select(User).where(User.id.in_(list(counts))))]
+    background.add_task(notifications.recordings_deleted, admin.name, notifications.word_label(word), trainers, total,
+                        notifications.admin_emails(db))
+    return {"deleted": total}
 
 
 @router.post("/samples")

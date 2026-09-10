@@ -18,8 +18,9 @@ def test_every_email_has_text_and_escaped_html():
     notifications.samples_reviewed(eve, "Admin", [(WATER, 2)], [(WATER, 1)], "<i>blurry</i>")
     notifications.review_summary("Admin", [(eve, 2, 1)], "blurry", admins)
     notifications.word_reviewed(eve, "Admin", THUMBS, "rejected", "Already exists", admins)
+    notifications.recordings_deleted("Admin", WATER, [(eve, 3)], 5, admins)
 
-    assert len(mailer.outbox) == 11
+    assert len(mailer.outbox) == 13
     for message in mailer.outbox:
         html = message["html"]
         assert html.startswith("<!DOCTYPE html>") and message["text"], message["subject"]
