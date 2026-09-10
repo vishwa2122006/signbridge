@@ -10,10 +10,13 @@ const CHIP_HUES = [170, 265, 330, 38, 200, 140];
 
 /** Recognized words as chips plus the sentence the backend's rule templates
  * form from them, kept up to date as words are added or removed. With
- * `onSend`, a Send button sits at the bottom (disabled until there is a sentence). */
-export default function SentenceBuilder({ words, onUndo, onClear, onSend, className = "" }) {
+ * `onSend`, a Send button sits at the bottom (disabled until there is a sentence).
+ * The sentence is spoken in `speakLang` ("ta" | "en", e.g. the listener's language),
+ * or following the display language when it isn't given. */
+export default function SentenceBuilder({ words, onUndo, onClear, onSend, speakLang, className = "" }) {
   const { lang } = useLanguage();
   const [sentence, setSentence] = useState(null);
+  const [noTamilVoice, setNoTamilVoice] = useState(false);
   const key = words.map((w) => w.concept).join(" ");
 
   useEffect(() => {
@@ -29,6 +32,12 @@ export default function SentenceBuilder({ words, onUndo, onClear, onSend, classN
   }, [key]);
 
   const current = key ? sentence : null;
+
+  const speak = async () => {
+    const { missing } = await speakBilingual(current, speakLang || lang);
+    setNoTamilVoice(missing.includes("ta"));
+  };
+  const speakTitle = speakLang ? `${t("speak", lang)} · ${speakLang === "ta" ? "தமிழ்" : "English"}` : t("speak", lang);
 
   return (
     <div className={`card accent sentence-card ${className}`}>
@@ -82,8 +91,13 @@ export default function SentenceBuilder({ words, onUndo, onClear, onSend, classN
             <BilingualOutput
               tamil={current.tamil}
               english={current.english}
-              onSpeak={onSend ? undefined : () => speakBilingual(current, lang)}
+              onSpeak={onSend ? undefined : speak}
             />
+          </div>
+        )}
+        {noTamilVoice && (
+          <div className="note warn small">
+            🔇 <T k="noTamilVoice" />
           </div>
         )}
       </div>
@@ -92,10 +106,10 @@ export default function SentenceBuilder({ words, onUndo, onClear, onSend, classN
         <div className="sentence-actions">
           <button
             className="secondary icon-btn"
-            onClick={() => speakBilingual(current, lang)}
+            onClick={speak}
             disabled={!current}
-            title={t("speak", lang)}
-            aria-label={t("speak", lang)}
+            title={speakTitle}
+            aria-label={speakTitle}
           >
             🔊
           </button>

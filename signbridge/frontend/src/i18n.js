@@ -112,6 +112,14 @@ export const STRINGS = {
   undo: { en: "Undo", ta: "பின்செல்" },
   clear: { en: "Clear", ta: "அழி" },
   speak: { en: "Speak", ta: "பேசு" },
+  noTamilVoice: {
+    en: "This device has no Tamil voice, so the Tamil couldn't be spoken. Add one - Windows: Settings › Time & language › Speech; Android: Google Text-to-speech › Tamil; Ubuntu: speech-dispatcher with espeak-ng.",
+    ta: "இந்தச் சாதனத்தில் தமிழ்க் குரல் இல்லை, அதனால் தமிழில் பேச முடியவில்லை. ஒன்றைச் சேர்க்கவும் - Windows: Settings › Time & language › Speech; Android: Google Text-to-speech › தமிழ்; Ubuntu: speech-dispatcher, espeak-ng.",
+  },
+  hearingLanguage: {
+    en: "Hearing person's language (dictation and speech)",
+    ta: "கேட்கும் நபரின் மொழி (குரல் பதிவு மற்றும் பேச்சு)",
+  },
   send: { en: "Send", ta: "அனுப்பு" },
 
   // Teach

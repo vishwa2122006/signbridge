@@ -327,6 +327,7 @@ export default function ConversationMode() {
             onUndo={recognizer.undo}
             onClear={recognizer.clear}
             onSend={sendSigned}
+            speakLang={speechLang}
           />
 
           <section className="card accent warm compose-card hearing-card">
@@ -373,7 +374,12 @@ export default function ConversationMode() {
                 >
                   🎙
                 </button>
-                <select value={speechLang} onChange={(e) => setSpeechLang(e.target.value)} aria-label="Speech language">
+                <select
+                  value={speechLang}
+                  onChange={(e) => setSpeechLang(e.target.value)}
+                  title={t("hearingLanguage", lang)}
+                  aria-label={t("hearingLanguage", lang)}
+                >
                   <option value="ta">தமிழ்</option>
                   <option value="en">English</option>
                 </select>
