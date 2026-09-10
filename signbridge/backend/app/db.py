@@ -67,6 +67,7 @@ _UPGRADES = [
     "ALTER TABLE samples ADD COLUMN IF NOT EXISTS duration_ms INTEGER",
     "UPDATE samples SET duration_ms = GREATEST(0, ROUND((frames -> -1 ->> 't')::numeric - (frames -> 0 ->> 't')::numeric))::int "
     "WHERE duration_ms IS NULL AND jsonb_array_length(frames) > 0",
+    "ALTER TABLE training_runs ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT false",
 ]
 
 

@@ -378,6 +378,35 @@ export const STRINGS = {
   },
   tabRecordings: { en: "Recordings", ta: "பதிவுகள்" },
   tabTrainers: { en: "Trainers", ta: "பயிற்சியாளர்கள்" },
+  tabModels: { en: "Models", ta: "மாதிரிகள்" },
+  trainedModels: { en: "Trained models", ta: "பயிற்சி பெற்ற மாதிரிகள்" },
+  modelsIntro: {
+    en: "Every training is kept as a version. The translator uses the one marked In use: switch back to an earlier version, or delete versions you don't need. Deleting the version in use stops translation until you use another one or train again.",
+    ta: "ஒவ்வொரு பயிற்சியும் ஒரு பதிப்பாகச் சேமிக்கப்படுகிறது. 'பயன்பாட்டில்' எனக் குறிக்கப்பட்டதை மொழிபெயர்ப்பாளர் பயன்படுத்துகிறது: முந்தைய பதிப்புக்கு மாறலாம், தேவையில்லாதவற்றை நீக்கலாம். பயன்பாட்டில் உள்ளதை நீக்கினால், வேறொன்றைத் தேர்ந்தெடுக்கும் வரை அல்லது மீண்டும் பயிற்சி அளிக்கும் வரை மொழிபெயர்ப்பு நிற்கும்.",
+  },
+  trainedAt: { en: "Trained", ta: "பயிற்சி நாள்" },
+  modelInUse: { en: "In use", ta: "பயன்பாட்டில்" },
+  useModel: { en: "Use this model", ta: "இதைப் பயன்படுத்து" },
+  modelMissing: { en: "File missing", ta: "கோப்பு இல்லை" },
+  noModels: {
+    en: "No trained models. Train one on the Recordings tab.",
+    ta: "பயிற்சி பெற்ற மாதிரிகள் இல்லை. 'பதிவுகள்' தாவலில் பயிற்சி அளியுங்கள்.",
+  },
+  confirmDeleteModel: { en: "Delete this trained model? This can't be undone.", ta: "இந்தப் பயிற்சி பெற்ற மாதிரியை நீக்கவா? இதைத் திரும்பப் பெற முடியாது." },
+  confirmDeleteActiveModel: {
+    en: "The translator is using this model. Delete it anyway? Translation stops until you use another model or train again.",
+    ta: "மொழிபெயர்ப்பாளர் இந்த மாதிரியைப் பயன்படுத்துகிறது. இருந்தாலும் நீக்கவா? வேறொன்றைப் பயன்படுத்தும் வரை அல்லது மீண்டும் பயிற்சி அளிக்கும் வரை மொழிபெயர்ப்பு நிற்கும்.",
+  },
+  modelDeleted: { en: "Model deleted.", ta: "மாதிரி நீக்கப்பட்டது." },
+  activeModelDeleted: {
+    en: "Model deleted. The translator has no model now - use another version or train again.",
+    ta: "மாதிரி நீக்கப்பட்டது. மொழிபெயர்ப்பாளருக்கு இப்போது மாதிரி இல்லை - வேறொரு பதிப்பைப் பயன்படுத்துங்கள் அல்லது மீண்டும் பயிற்சி அளியுங்கள்.",
+  },
+  modelActivated: { en: "The translator now uses this model.", ta: "மொழிபெயர்ப்பாளர் இப்போது இந்த மாதிரியைப் பயன்படுத்துகிறது." },
+  errModelMissing: {
+    en: "This model's files are missing, so it can't be used.",
+    ta: "இந்த மாதிரியின் கோப்புகள் இல்லை, அதனால் பயன்படுத்த முடியாது.",
+  },
   trainModelTitle: { en: "Train the model", ta: "மாதிரிக்குப் பயிற்சி" },
   trainApprovedHint: {
     en: "Training uses only approved recordings of approved words; each word needs at least {min}.",

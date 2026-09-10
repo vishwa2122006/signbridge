@@ -714,6 +714,7 @@ button.secondary.toggled { background: rgba(46, 230, 197, 0.28); border-color: r
 .trainer-head .grow { min-width: 8rem; }
 .person { display: flex; align-items: flex-start; gap: 0.6rem; }
 tr.inactive-row { opacity: 0.6; }
+tr.active-model { background: rgba(61, 220, 132, 0.08); }
 .recording-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 0.7rem; }
 .recording-tile {
   display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem; border-radius: 14px;

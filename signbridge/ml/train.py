@@ -1,9 +1,10 @@
 """
 train.py — trains the sign classifier from the command line.
 
-Same as Review -> Train model in the app: uses every approved recording in
-the database and writes dataset/models/. A running backend loads the
-new model on restart (the in-app Train button hot-swaps it instead).
+Same as Review & Train -> Train model in the app: uses every approved
+recording in the database, keeps the result as a new model version
+(dataset/models/<version>/) and makes it the one in use. A running backend
+loads it on restart (the in-app Train button switches immediately).
 
 Usage (from the signbridge/ folder, with the backend venv active):
     python ml/train.py
@@ -15,8 +16,9 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "backend"))
 
-from app import config  # noqa: E402
+from app.db import init_db, session_scope  # noqa: E402
 from app.ml import trainer  # noqa: E402
+from app.services import model_store  # noqa: E402
 
 
 def pct(value):
@@ -25,13 +27,15 @@ def pct(value):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--model_dir", default=None, help=f"default: {config.model_dir()}")
-    args = parser.parse_args()
+    parser.parse_args()
+    init_db()
 
     try:
-        meta = trainer.train_and_save(model_dir=args.model_dir)
+        with session_scope() as db:
+            run = model_store.train(db, None)
     except trainer.NotEnoughDataError as e:
         sys.exit(f"Not enough data: {e}")
+    meta = run.meta
 
     print(f"Model: {meta['model_type']}  ({meta['num_samples']} samples, {meta['num_signers']} signers, "
           f"{meta['training_seconds']} s)")
@@ -47,7 +51,7 @@ def main():
             print(f"{w['concept']:<24}{w['precision']:>10.2f}{w['recall']:>8.2f}{w['f1']:>7.2f}{w['samples']:>9}")
     for warning in meta["warnings"]:
         print(f"\nWARNING: {warning}")
-    print(f"\nSaved to {args.model_dir or config.model_dir()}")
+    print(f"\nSaved as model version {run.id} in {model_store.run_dir(run.id)}, now the one in use.")
 
 
 if __name__ == "__main__":

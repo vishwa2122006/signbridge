@@ -8,14 +8,18 @@ import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { api } from "../api.js";
 import { categoryStyle } from "../colors.js";
-import { STRINGS, formatDate, t } from "../i18n.js";
+import { STRINGS, formatDate, pickText, t } from "../i18n.js";
 
 const NONE = "_none";
 const MIN_SAMPLES = 5;
 const STATUS_FILTERS = ["pending", "approved", "rejected", "all"];
 const STATUS_ICONS = { draft: "✎", pending: "⏳", approved: "✓", rejected: "✕" };
 
+const TABS = ["recordings", "trainers", "models"];
+const MAX_WORDS_LISTED = 8;
+
 const needsReview = (w) => w.status === "pending" || w.counts.pending > 0;
+const percent = (v) => (typeof v === "number" ? `${Math.round(v * 100)}%` : "—");
 
 function TrainCard({ queue, wordOf, onTrained }) {
   const [report, setReport] = useState(null);
@@ -653,10 +657,139 @@ function Trainers() {
   );
 }
 
-/** Admins: review trainers' recordings and proposed words, train the model, and see who the trainers are. */
+/** Every training is kept as a version: use an earlier one, or delete versions. */
+function Models({ wordOf }) {
+  const { lang } = useLanguage();
+  const [models, setModels] = useState(null);
+  const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(() => api.listModels().then(setModels).catch(setError), []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const run = async (model, action) => {
+    if (action === "delete" && !window.confirm(t(model.is_active ? "confirmDeleteActiveModel" : "confirmDeleteModel", lang))) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      if (action === "delete") {
+        setNotice((await api.deleteModel(model.id)).was_active ? "activeModelDeleted" : "modelDeleted");
+      } else {
+        await api.activateModel(model.id);
+        setNotice("modelActivated");
+      }
+      await load();
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!models) {
+    return error ? <ErrorNote error={error} /> : <div className="page-loading"><span className="spinner big" /></div>;
+  }
+
+  return (
+    <div className="card accent teal">
+      <h3 className="flush">
+        🧠 <T k="trainedModels" />
+      </h3>
+      <p className="dim small">
+        <T k="modelsIntro" />
+      </p>
+      <ErrorNote error={error} />
+      {notice && (
+        <div className={`note ${notice === "activeModelDeleted" ? "warn" : "ok"}`}>
+          {notice === "activeModelDeleted" ? "⚠️" : "✅"} <T k={notice} />
+        </div>
+      )}
+      {models.length === 0 ? (
+        <p className="dim">
+          <T k="noModels" />
+        </p>
+      ) : (
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <T k="trainedAt" />
+                </th>
+                <th>
+                  <T k="cvAccuracy" />
+                </th>
+                <th>
+                  <T k="totalWords" />
+                </th>
+                <th>
+                  <T k="samplesSigners" />
+                </th>
+                <th>
+                  <T k="status" />
+                </th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {models.map((m) => (
+                <tr key={m.id} className={m.is_active ? "active-model" : ""}>
+                  <td>
+                    <b>#{m.id}</b> <span className="small">{formatDate(m.created_at, lang, true)}</span>
+                    <div className="small dim">
+                      {[m.trained_by, m.size_bytes ? `${(m.size_bytes / 1e6).toFixed(1)} MB` : null].filter(Boolean).join(" · ")}
+                    </div>
+                  </td>
+                  <td>
+                    {percent(m.cv_accuracy)}
+                    <div className="small dim">{m.model_type?.replace(/_/g, " ")}</div>
+                  </td>
+                  <td>
+                    <span className="count-pill">{m.words.length}</span>{" "}
+                    <span className="small dim">
+                      {m.words.slice(0, MAX_WORDS_LISTED).map((w) => pickText(wordOf(w), lang)).join(", ")}
+                      {m.words.length > MAX_WORDS_LISTED ? ", …" : ""}
+                    </span>
+                  </td>
+                  <td>
+                    {m.num_samples} / {m.num_signers}
+                  </td>
+                  <td className="nowrap">
+                    {m.is_active ? (
+                      <span className="status-pill approved">✓ {t("modelInUse", lang)}</span>
+                    ) : m.available ? (
+                      <button className="secondary small" onClick={() => run(m, "activate")} disabled={busy}>
+                        ▶ <T k="useModel" />
+                      </button>
+                    ) : (
+                      <span className="status-pill rejected">{t("modelMissing", lang)}</span>
+                    )}
+                  </td>
+                  <td className="right">
+                    <button className="danger small" onClick={() => run(m, "delete")} disabled={busy}>
+                      🗑 <T k="delete" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Admins: review trainers' recordings and proposed words, train and manage models, and see who the trainers are. */
 export default function Review() {
   const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") === "trainers" ? "trainers" : "recordings";
+  const tab = TABS.includes(params.get("tab")) ? params.get("tab") : "recordings";
   const [queue, setQueue] = useState([]);
   const [queueError, setQueueError] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -710,11 +843,19 @@ export default function Review() {
         >
           👥 <T k="tabTrainers" />
         </button>
+        <button
+          role="tab"
+          aria-selected={tab === "models"}
+          className={tab === "models" ? "active" : ""}
+          onClick={() => setParams({ tab: "models" })}
+        >
+          🧠 <T k="tabModels" />
+        </button>
       </div>
 
-      {tab === "trainers" ? (
-        <Trainers />
-      ) : (
+      {tab === "trainers" && <Trainers />}
+      {tab === "models" && <Models wordOf={wordOf} />}
+      {tab === "recordings" && (
         <>
           <TrainCard queue={queue} wordOf={wordOf} onTrained={loadQueue} />
           <ErrorNote error={queueError} />

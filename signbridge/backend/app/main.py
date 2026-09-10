@@ -5,17 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.db import init_db
-from app.ml.classifier import SignClassifier
 from app.routers import auth, predict, review, samples, signs, train, translate, users
+from app.services import model_store
 from app.services.recognition import engine
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
-    classifier = SignClassifier.load()
-    if classifier is not None:
-        engine.load_classifier(classifier)
+    model_store.start()
     yield
 
 

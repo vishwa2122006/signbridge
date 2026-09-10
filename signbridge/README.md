@@ -97,6 +97,7 @@ Open the printed URL (http://localhost:5173).
    - Mark recordings ✓ or ✕ one at a time, per trainer, or everything in the list shown (e.g. the **Approved** filter + **Reject all** takes back approvals).
    - **Delete all recordings** removes every recording of the word, from all trainers and in any status; the word stays and the trainers are emailed. Train again afterwards so the model forgets them.
    - Add a note for rejections and press **Save review**: each trainer gets one email for the whole batch. A proposed word must be approved before its recordings can be.
+   - The **Models** tab lists every training as a version (date, who trained it, accuracy, words, samples). **Use this model** switches the translator to an earlier version; **Delete** removes a version. Deleting the version in use stops translation until you use another one or train again.
    - Press **Train model**. Only approved recordings of approved words are used. You'll see cross-validated accuracy and per-word scores, plus warnings, e.g. too few signers.
 3. **Translate**: start the camera and sign. Words appear as chips; the sentence updates automatically; 🔊 speaks it.
 4. **Conversation**: the signer signs and presses Send; the hearing person taps a bilingual quick phrase, types, or dictates.
@@ -146,6 +147,7 @@ backend/
   app/services/templates.py      offline Tamil/English sentence templates
   app/services/vocabulary.py     words (built-in + approved custom), cached
   app/services/sample_store.py   recordings and their review status
+  app/services/model_store.py    trained model versions (dataset/models/<version>/), the one in use
   app/services/security.py       passwords, login tokens, email codes
   app/services/notifications.py  the emails (sent by mailer.py)
   app/routers/                   /auth /signs /samples /review /admin/users /train /predict /translate
@@ -181,7 +183,7 @@ The backend tests need `TEST_DATABASE_URL` in `backend/.env`: a separate databas
 | Env var | Default | Meaning |
 |---|---|---|
 | `DATABASE_URL`, `JWT_SECRET`, `OTP_*`, `SMTP_*`, ... | see `backend/.env.example` | database, logins, email codes and email |
-| `SIGNBRIDGE_DATA_DIR` | `signbridge/dataset` | where the trained model is stored |
+| `SIGNBRIDGE_DATA_DIR` | `signbridge/dataset` | where trained model versions are stored |
 | `SIGNBRIDGE_MIN_CONFIDENCE` | `0.70` | minimum classifier confidence to accept a sign |
 | `SIGNBRIDGE_STABILITY_WINDOW` | `4` | predictions (~250 ms each) that must mostly agree |
 | `SIGNBRIDGE_STABILITY_RATIO` | `0.75` | share of that window the word must win |

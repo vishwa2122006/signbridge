@@ -26,6 +26,7 @@ const CODE_KEYS = {
   word_not_approved: "errWordNotApproved",
   nothing_to_submit: "errNothingToSubmit",
   no_recordings: "errNoRecordings",
+  model_missing: "errModelMissing",
   already_reviewed: "errAlreadyReviewed",
   not_allowed: "errNotAllowed",
 };

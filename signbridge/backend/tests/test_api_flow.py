@@ -195,6 +195,27 @@ def test_record_review_train_predict_translate():
         sentence = client.post("/translate", json={"words": ["want", "water"]}).json()
         assert sentence["english"] == "I want water." and sentence["tamil"] == "எனக்கு தண்ணீர் வேண்டும்."
 
+        # every training is kept as a model version: train again, switch back, delete
+        first = meta["model_id"]
+        r = client.post("/train", headers=admin)
+        assert r.status_code == 200, r.text
+        second = r.json()["model_id"]
+        assert client.get("/models", headers=trainers[0]).status_code == 403
+        models = client.get("/models", headers=admin).json()
+        assert [(m["id"], m["is_active"], m["available"]) for m in models] == [(second, True, True), (first, False, True)]
+        assert client.get("/health").json()["model"]["model_id"] == second
+        r = client.post(f"/models/{first}/activate", headers=admin)
+        assert r.status_code == 200 and r.json()["model_id"] == first
+        r = client.delete(f"/models/{second}", headers=admin)
+        assert r.status_code == 200 and r.json()["was_active"] is False and r.json()["model_loaded"] is True
+        r = client.delete(f"/models/{first}", headers=admin)  # the one in use
+        assert r.status_code == 200 and r.json()["was_active"] is True
+        assert client.get("/health").json()["model_loaded"] is False
+        assert client.get("/models", headers=admin).json() == []
+        live = client.post("/predict", json={"session_id": "no-model", "window": make_clip("water", 1, rng)}).json()
+        assert live["status"] == "NO_MODEL"
+        assert client.delete(f"/models/{first}", headers=admin).status_code == 404
+
         # an admin can reject recordings that were already approved
         approved_water = [s["id"] for s in client.get("/review/words/water/samples", headers=admin).json()["samples"]
                           if s["status"] == "approved"]

@@ -147,6 +147,7 @@ class TrainingRun(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     succeeded: Mapped[bool] = mapped_column(Boolean)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")  # the model in use
     meta: Mapped[Optional[dict]] = mapped_column(JSONB)
     error: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = _time(nullable=False, default=utcnow)

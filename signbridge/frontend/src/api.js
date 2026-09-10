@@ -124,6 +124,9 @@ export const api = {
   setUserActive: (userId, isActive) =>
     request(`/admin/users/${encodeURIComponent(userId)}`, { method: "PATCH", body: { is_active: isActive } }),
   train: () => post("/train"),
+  listModels: () => request("/models"),
+  activateModel: (modelId) => post(`/models/${encodeURIComponent(modelId)}/activate`),
+  deleteModel: (modelId) => request(`/models/${encodeURIComponent(modelId)}`, { method: "DELETE" }),
 
   predict: (sessionId, window, aspect) => post("/predict", { session_id: sessionId, window, aspect }),
   resetSession: (sessionId) => post(`/predict/reset/${encodeURIComponent(sessionId)}`),

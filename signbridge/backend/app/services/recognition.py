@@ -50,8 +50,13 @@ class RecognitionEngine:
         self.model_metadata = metadata or {}
         self._sessions.clear()
 
-    def load_classifier(self, classifier):
-        self.load_model(classifier, classifier.labels, classifier.meta)
+    def load_classifier(self, classifier, model_id: Optional[int] = None):
+        meta = {**classifier.meta, "model_id": model_id} if model_id is not None else classifier.meta
+        self.load_model(classifier, classifier.labels, meta)
+
+    def unload(self):
+        """No trained model: every prediction returns NO_MODEL."""
+        self.load_model(None, [], {})
 
     @property
     def model_loaded(self) -> bool:
