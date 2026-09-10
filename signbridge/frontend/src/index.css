@@ -1,0 +1,120 @@
+/* Accessibility-first: large text, high contrast, minimal chrome */
+:root {
+  --bg: #0b1220;
+  --surface: #121a2b;
+  --surface-2: #1b2740;
+  --text: #f5f7fa;
+  --text-dim: #b9c2d0;
+  --accent: #4fd1c5;
+  --accent-2: #63b3ed;
+  --ok: #48bb78;
+  --warn: #ecc94b;
+  --danger: #fc5c5c;
+  --focus: #ffd23f;
+  --radius: 14px;
+  font-size: 18px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans Tamil", "Noto Sans", system-ui, -apple-system, sans-serif;
+}
+
+body { padding: 0; }
+
+a { color: var(--accent-2); }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  padding: 0.9em 1.4em;
+  font-weight: 700;
+  background: var(--accent);
+  color: #06251f;
+}
+button:hover { filter: brightness(1.08); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button.secondary { background: var(--surface-2); color: var(--text); }
+button.danger { background: var(--danger); color: #2a0505; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.app-shell { display: flex; min-height: 100vh; flex-direction: column; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.5rem; background: var(--surface); border-bottom: 1px solid #22304a;
+  flex-wrap: wrap; gap: 0.75rem;
+}
+.brand { display: flex; align-items: baseline; gap: 0.6rem; }
+.brand h1 { font-size: 1.6rem; margin: 0; }
+.brand .tagline { color: var(--text-dim); font-size: 0.95rem; }
+
+nav.main-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--surface); }
+nav.main-nav a {
+  text-decoration: none; color: var(--text); background: var(--surface-2);
+  padding: 0.6em 1em; border-radius: 999px; font-weight: 600; font-size: 0.95rem;
+}
+nav.main-nav a.active, nav.main-nav a:hover { background: var(--accent); color: #06251f; }
+
+main { flex: 1; padding: 1.5rem; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+.card {
+  background: var(--surface); border: 1px solid #22304a; border-radius: var(--radius);
+  padding: 1.25rem; margin-bottom: 1.25rem;
+}
+
+.disclaimer-banner {
+  background: #2a1f0a; border: 1px solid #7a5c14; color: #ffe6a8;
+  padding: 0.9rem 1.1rem; border-radius: var(--radius); font-size: 0.95rem; margin-bottom: 1.25rem;
+}
+
+.emergency-banner {
+  background: #3a0f10; border: 2px solid var(--danger); color: #ffdada;
+  padding: 1.1rem; border-radius: var(--radius); font-size: 1.3rem; font-weight: 800;
+  display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;
+}
+
+.status-row { display: flex; align-items: center; gap: 0.6rem; font-size: 1.1rem; margin: 0.5rem 0; }
+.status-dot { width: 1em; height: 1em; border-radius: 50%; display: inline-block; }
+.status-dot.recognized { background: var(--ok); }
+.status-dot.processing { background: var(--warn); }
+.status-dot.unclear { background: var(--danger); }
+.status-dot.waiting { background: #4a5568; }
+
+.big-output { font-size: 2.4rem; font-weight: 800; margin: 0.2rem 0; }
+.big-output .en { font-size: 1.3rem; color: var(--text-dim); font-weight: 600; }
+
+.grid { display: grid; gap: 1rem; }
+.grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+video, canvas.overlay { border-radius: var(--radius); background: #000; }
+.camera-wrap { position: relative; max-width: 640px; }
+.camera-wrap canvas.overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.pill { display: inline-block; padding: 0.25em 0.75em; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
+.pill.validated { background: #143a24; color: var(--ok); }
+.pill.research-reference { background: #2a2a10; color: var(--warn); }
+.pill.unverified { background: #2a1414; color: var(--danger); }
+
+.lang-toggle { display: flex; gap: 0.4rem; }
+.lang-toggle button { padding: 0.4em 0.9em; font-size: 0.9rem; }
+.lang-toggle button.active { background: var(--accent); color: #06251f; }
+.lang-toggle button:not(.active) { background: var(--surface-2); color: var(--text-dim); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.6em 0.5em; border-bottom: 1px solid #22304a; }
+
+.footer-note { color: var(--text-dim); font-size: 0.85rem; text-align: center; padding: 2rem 1rem; }
+
+@media (max-width: 480px) {
+  :root { font-size: 16px; }
+  .big-output { font-size: 1.8rem; }
+}
