@@ -3,11 +3,32 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 
 from app.models.schemas import SignCreate
-from app.services import sample_store
+from app.services import sample_store, sign_demos
 from app.services.recognition import engine
 from app.services.vocabulary import vocabulary
 
 router = APIRouter()
+
+
+@router.get("/signs/{concept}/demo")
+def sign_demo(concept: str):
+    """The most typical recording of a word, replayed to the signer as a hand sign."""
+    row = vocabulary.get_by_concept(concept)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Unknown word")
+    sample = sign_demos.representative_sample(concept)
+    if sample is None:
+        raise HTTPException(status_code=404, detail={
+            "code": "no_recording", "message": f"No recording of '{row['english']}' yet.",
+        })
+    return {
+        "concept": concept,
+        "english": row["english"],
+        "tamil": row["tamil"],
+        "signer_id": sample.get("signer_id"),
+        "aspect": sample.get("aspect"),
+        "frames": sample["frames"],
+    }
 
 
 @router.get("/signs")

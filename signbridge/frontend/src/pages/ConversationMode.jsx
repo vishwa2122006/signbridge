@@ -4,6 +4,7 @@ import CameraFeed from "../components/CameraFeed.jsx";
 import EmergencyBanner from "../components/EmergencyBanner.jsx";
 import ErrorNote from "../components/ErrorNote.jsx";
 import SentenceBuilder from "../components/SentenceBuilder.jsx";
+import SignPlayer from "../components/SignPlayer.jsx";
 import StatusIndicator from "../components/StatusIndicator.jsx";
 import STAFF_PHRASES from "../data/staffPhrases.js";
 import { useSignRecognizer } from "../hooks/useSignRecognizer.js";
@@ -16,10 +17,33 @@ const MANUAL_WORD_LIMIT = 40;
 
 const clock = (timestamp) => new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-function Bubble({ entry, latest, lang }) {
+/** The hearing person's message as hand signs for the signer (collapsible). */
+function StaffSigns({ signs, open, onToggle }) {
+  if (signs === null) {
+    return (
+      <div className="bubble-note">
+        <span className="spinner" /> <T k="loadingSigns" />
+      </div>
+    );
+  }
+  if (!signs?.length) return null;
+  return (
+    <div className="bubble-signs">
+      <button className="link" onClick={onToggle}>
+        🤟 <T k={open ? "hideSigns" : "showSigns"} />
+      </button>
+      {open && <SignPlayer items={signs} />}
+    </div>
+  );
+}
+
+function Bubble({ entry, latest, lang, signsOpen, onToggleSigns }) {
   const signer = entry.who === "signer";
   return (
-    <div className={`bubble ${entry.who}${latest ? " latest" : ""}`}>
+    <div
+      className={`bubble ${entry.who}${latest ? " latest" : ""}${signsOpen ? " with-signs" : ""}`}
+      data-entry-id={entry.id}
+    >
       <div className="bubble-meta">
         <span>
           {signer ? "🤟" : "🎤"} {t(signer ? "patient" : "staff", lang)}
@@ -42,6 +66,7 @@ function Bubble({ entry, latest, lang }) {
           {lang !== "ta" && <div className={lang === "en" ? "bubble-main" : "bubble-sub"}>{entry.english}</div>}
         </>
       )}
+      {!signer && <StaffSigns signs={entry.signs} open={signsOpen} onToggle={onToggleSigns} />}
     </div>
   );
 }
@@ -49,8 +74,9 @@ function Bubble({ entry, latest, lang }) {
 /**
  * Three columns on wide screens: the signer's camera | the conversation | both
  * reply boxes stacked (signed words above the hearing person's messages), so
- * either side can send from the same place. On narrow screens: camera, signed
- * words, conversation, hearing person.
+ * either side can send from the same place. The hearing person's messages are
+ * shown to the signer as hand signs inside the chat. On narrow screens: camera,
+ * signed words, conversation, hearing person.
  */
 export default function ConversationMode() {
   const { lang } = useLanguage();
@@ -60,22 +86,61 @@ export default function ConversationMode() {
   const [vocabulary, setVocabulary] = useState([]);
   const [wordSearch, setWordSearch] = useState("");
   const [log, setLog] = useState([]);
+  const [openSignsId, setOpenSignsId] = useState(null);
   const [staffText, setStaffText] = useState("");
   const [speechLang, setSpeechLang] = useState("ta");
   const [listening, setListening] = useState(false);
   const [error, setError] = useState(null);
   const nextId = useRef(0);
+  const latestStaffId = useRef(null);
   const chatRef = useRef(null);
+  const stackRef = useRef(null);
+  const stickToBottom = useRef(true);
+  const revealId = useRef(null);
 
   useEffect(() => {
     api.listSigns().then(setVocabulary).catch(() => setVocabulary([]));
   }, []);
 
-  // keep the newest message in view
+  // New messages scroll the chat to the bottom.
   useEffect(() => {
     const chat = chatRef.current;
-    if (chat) chat.scrollTop = chat.scrollHeight;
+    if (!chat) return;
+    chat.scrollTop = chat.scrollHeight;
+    stickToBottom.current = true;
   }, [log]);
+
+  // Messages can grow afterwards (e.g. a sign player loading); stay at the bottom
+  // unless the reader has scrolled up to read something older.
+  useEffect(() => {
+    const chat = chatRef.current;
+    const stack = stackRef.current;
+    const onScroll = () => {
+      stickToBottom.current = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 60;
+    };
+    const observer = new ResizeObserver(() => {
+      if (stickToBottom.current) chat.scrollTop = chat.scrollHeight;
+    });
+    chat.addEventListener("scroll", onScroll, { passive: true });
+    observer.observe(stack);
+    return () => {
+      chat.removeEventListener("scroll", onScroll);
+      observer.disconnect();
+    };
+  }, []);
+
+  // Opening signs on an older message brings that message into view.
+  useEffect(() => {
+    if (revealId.current === null) return;
+    chatRef.current?.querySelector(`[data-entry-id="${revealId.current}"]`)?.scrollIntoView({ block: "nearest" });
+    revealId.current = null;
+  }, [openSignsId]);
+
+  const toggleSigns = (id) => {
+    stickToBottom.current = false;
+    revealId.current = id;
+    setOpenSignsId((current) => (current === id ? null : id));
+  };
 
   const manualWords = useMemo(() => {
     const q = wordSearch.trim().toLowerCase();
@@ -84,7 +149,12 @@ export default function ConversationMode() {
     return [...matches.filter((v) => v.trained), ...matches.filter((v) => !v.trained)].slice(0, MANUAL_WORD_LIMIT);
   }, [vocabulary, wordSearch]);
 
-  const addEntry = (entry) => setLog((l) => [...l, { ...entry, id: nextId.current++, at: Date.now() }]);
+  const addEntry = (entry) => {
+    const id = nextId.current++;
+    setLog((l) => [...l, { ...entry, id, at: Date.now() }]);
+    return id;
+  };
+  const updateEntry = (id, changes) => setLog((l) => l.map((e) => (e.id === id ? { ...e, ...changes } : e)));
 
   const sendSigned = (sentence) => {
     if (!sentence) return;
@@ -92,11 +162,31 @@ export default function ConversationMode() {
     recognizer.clear();
   };
 
+  /** Adds the hearing person's message, then looks up its words as signs and
+   * opens the sign player on it (if it's still the newest message). */
+  const sendStaff = (message, textToMatch) => {
+    const id = addEntry({ who: "staff", ...message, signs: null });
+    latestStaffId.current = id;
+    api
+      .textToSigns(textToMatch)
+      .then((signs) => {
+        updateEntry(id, { signs });
+        if (latestStaffId.current === id) setOpenSignsId(id);
+      })
+      .catch(() => updateEntry(id, { signs: [] }));
+  };
+
   const sendTyped = () => {
     const text = staffText.trim();
     if (!text) return;
-    addEntry({ who: "staff", text });
+    sendStaff({ text }, text);
     setStaffText("");
+  };
+
+  const clearLog = () => {
+    setLog([]);
+    setOpenSignsId(null);
+    latestStaffId.current = null;
   };
 
   const dictate = () => {
@@ -193,7 +283,7 @@ export default function ConversationMode() {
             </h3>
             {log.length > 0 && <span className="count-badge">{log.length}</span>}
             <span className="spacer" />
-            <button className="secondary small" onClick={() => setLog([])} disabled={!log.length}>
+            <button className="secondary small" onClick={clearLog} disabled={!log.length}>
               ✕ <T k="clear" />
             </button>
           </div>
@@ -204,14 +294,25 @@ export default function ConversationMode() {
             </span>
           </div>
           <div className="chat-body" ref={chatRef} aria-live="polite">
-            {log.length === 0 ? (
-              <div className="chat-empty">
-                <div className="big">🤟 ⇄ 🎤</div>
-                <T k="conversationEmpty" />
-              </div>
-            ) : (
-              log.map((entry, i) => <Bubble key={entry.id} entry={entry} latest={i === log.length - 1} lang={lang} />)
-            )}
+            <div className="chat-stack" ref={stackRef}>
+              {log.length === 0 ? (
+                <div className="chat-empty">
+                  <div className="big">🤟 ⇄ 🎤</div>
+                  <T k="conversationEmpty" />
+                </div>
+              ) : (
+                log.map((entry, i) => (
+                  <Bubble
+                    key={entry.id}
+                    entry={entry}
+                    latest={i === log.length - 1}
+                    lang={lang}
+                    signsOpen={openSignsId === entry.id}
+                    onToggleSigns={() => toggleSigns(entry.id)}
+                  />
+                ))
+              )}
+            </div>
           </div>
         </section>
 
@@ -238,7 +339,7 @@ export default function ConversationMode() {
             </div>
             <div className="phrase-grid">
               {STAFF_PHRASES.map((phrase) => (
-                <button key={phrase.english} className="phrase" onClick={() => addEntry({ who: "staff", ...phrase })}>
+                <button key={phrase.english} className="phrase" onClick={() => sendStaff(phrase, phrase.english)}>
                   <span className="phrase-ta">{phrase.tamil}</span>
                   <span className="phrase-en">{phrase.english}</span>
                 </button>

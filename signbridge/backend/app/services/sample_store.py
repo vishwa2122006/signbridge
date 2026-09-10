@@ -98,6 +98,22 @@ def load_all(root: Optional[str] = None) -> List[dict]:
     return samples
 
 
+def load_concept(concept: str, root: Optional[str] = None) -> List[dict]:
+    directory = _concept_dir(concept, root)
+    if not os.path.isdir(directory):
+        return []
+    samples = []
+    for name in sorted(os.listdir(directory)):
+        if not name.endswith(".json"):
+            continue
+        try:
+            with open(os.path.join(directory, name), encoding="utf-8") as f:
+                samples.append(json.load(f))
+        except (OSError, json.JSONDecodeError) as e:
+            log.warning("Skipping unreadable sample %s: %s", name, e)
+    return samples
+
+
 def delete_sample(sample_id: str, root: Optional[str] = None) -> bool:
     if not SAMPLE_ID_RE.match(sample_id):
         return False

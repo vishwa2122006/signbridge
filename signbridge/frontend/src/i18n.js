@@ -185,6 +185,21 @@ export const STRINGS = {
   },
   latest: { en: "Latest", ta: "சமீபத்தியது" },
   untranslated: { en: "typed text - not translated", ta: "தட்டச்சு உரை - மொழிபெயர்க்கப்படவில்லை" },
+  inSigns: { en: "In signs", ta: "சைகையில்" },
+  showSigns: { en: "Show in signs", ta: "சைகையில் காட்டு" },
+  hideSigns: { en: "Hide signs", ta: "சைகையை மறை" },
+  loadingSigns: { en: "Finding signs...", ta: "சைகைகளைத் தேடுகிறது..." },
+  replay: { en: "Replay", ta: "மீண்டும்" },
+  slow: { en: "Slow", ta: "மெதுவாக" },
+  notSigned: { en: "no recorded sign for this word", ta: "இந்தச் சொல்லுக்குப் பதிவுசெய்த சைகை இல்லை" },
+  noSignsRecorded: {
+    en: "No recorded signs for these words yet - record them on Teach Signs.",
+    ta: "இந்தச் சொற்களுக்கு இன்னும் பதிவுசெய்த சைகைகள் இல்லை - 'சைகைகளைக் கற்பி' பக்கத்தில் பதிவு செய்யுங்கள்.",
+  },
+  signsFromRecordings: {
+    en: "Replayed from recordings made on Teach Signs",
+    ta: "'சைகைகளைக் கற்பி' பதிவுகளிலிருந்து காட்டப்படுகிறது",
+  },
   noSpeechRecognition: {
     en: "This browser doesn't support speech recognition.",
     ta: "இந்த உலாவி பேச்சு அறிதலை ஆதரிக்கவில்லை.",

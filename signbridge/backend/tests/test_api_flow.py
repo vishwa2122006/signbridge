@@ -83,6 +83,16 @@ def test_teach_train_predict_translate():
         no_hand = client.post("/predict", json={"session_id": "live", "window": [{"t": 0}, {"t": 33}]}).json()
         assert no_hand["status"] == "NO_HAND"
 
+        # a hearing person's reply shown as signs: only recorded words have a clip to replay
+        items = client.post("/text-to-signs", json={"text": "Do you want water?"}).json()["items"]
+        assert [i["concept"] for i in items] == ["you", "want", "water"]
+        assert [i["has_sign"] for i in items] == [False, False, True]
+        demo = client.get("/signs/water/demo")
+        assert demo.status_code == 200, demo.text
+        assert len(demo.json()["frames"]) >= 5 and demo.json()["tamil"] == "தண்ணீர்"
+        missing = client.get("/signs/fever/demo")
+        assert missing.status_code == 404 and missing.json()["detail"]["code"] == "no_recording"
+
         # sentence
         sentence = client.post("/translate", json={"words": ["want", "water"]}).json()
         assert sentence["english"] == "I want water." and sentence["tamil"] == "எனக்கு தண்ணீர் வேண்டும்."

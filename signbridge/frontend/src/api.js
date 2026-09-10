@@ -68,6 +68,8 @@ export const api = {
   resetSession: (sessionId) => request(`/predict/reset/${encodeURIComponent(sessionId)}`, { method: "POST" }),
 
   translate: (words) => request("/translate", { method: "POST", body: { words } }),
+  textToSigns: (text) => request("/text-to-signs", { method: "POST", body: { text } }).then((res) => res.items),
+  signDemo: (concept) => request(`/signs/${encodeURIComponent(concept)}/demo`),
 };
 
 export { API_BASE };

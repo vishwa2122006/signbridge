@@ -9,7 +9,7 @@ talking with a hearing person (e.g. hospital staff).
 
 - **Teach Signs**: record a few 1.5-second samples of each word with your webcam and train a model in seconds, on CPU.
 - **Translate**: sign live. Each recognized word appears in Tamil and English, and the words form a sentence you can have spoken aloud.
-- **Conversation**: your signs become text; the other person replies with bilingual quick phrases, typing or dictation.
+- **Conversation**: your signs become text; the other person replies with bilingual quick phrases, typing or dictation. Their replies are shown back to the signer as hand signs, replayed from the recordings made on Teach Signs.
 - **Vocabulary**: 131 built-in words (90 healthcare + 41 everyday), plus any custom words you add with your own English and Tamil text.
 - **Dataset import**: turn sign videos (e.g. a public Tamil/Indian Sign Language dataset) into training samples.
 

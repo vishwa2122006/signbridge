@@ -533,7 +533,8 @@ button.listening { animation: pulse 1.2s infinite; color: var(--pink); }
 .chat-legend { display: flex; justify-content: space-between; padding: 0.45rem 1.2rem; font-size: 0.8rem; font-weight: 700; border-bottom: 1px solid var(--line); }
 .legend.signer { color: var(--teal); }
 .legend.staff { color: var(--amber); }
-.chat-body { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem 1.1rem 1.4rem; overflow-y: auto; scroll-behavior: smooth; }
+.chat-body { flex: 1; padding: 1rem 1.1rem 1.4rem; overflow-y: auto; }
+.chat-stack { display: flex; flex-direction: column; gap: 0.75rem; min-height: 100%; }
 .chat-empty { margin: auto; max-width: 22rem; text-align: center; color: var(--text-dim); }
 .chat-empty .big { font-size: 2.6rem; margin-bottom: 0.5rem; animation: float 3s ease-in-out infinite; }
 
@@ -569,6 +570,39 @@ button.listening { animation: pulse 1.2s infinite; color: var(--pink); }
 .phrase:hover:not(:disabled) { background: rgba(255, 181, 71, 0.2); filter: none; }
 .phrase-ta { font-size: 0.95rem; }
 .phrase-en { font-size: 0.78rem; font-weight: 500; color: var(--text-dim); }
+
+/* ---------- hearing person's replies shown as hand signs (SignPlayer.jsx) ---------- */
+.bubble.with-signs { width: 92%; max-width: 92%; }
+.bubble-signs { margin-top: 0.45rem; }
+.bubble-signs > button.link { font-size: 0.88rem; }
+.sign-player { margin-top: 0.5rem; }
+.sign-stage {
+  position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1);
+  background: radial-gradient(120% 90% at 50% 20%, rgba(139, 92, 246, 0.3), rgba(7, 5, 20, 0.92) 70%);
+}
+.sign-canvas { display: block; width: 100%; aspect-ratio: 4 / 3; max-height: 230px; }
+.sign-tools { position: absolute; top: 0.45rem; right: 0.45rem; display: flex; gap: 0.3rem; }
+.sign-tools button.icon-btn { width: 2rem; height: 2rem; font-size: 0.9rem; background: rgba(7, 5, 20, 0.62); }
+.sign-badge {
+  position: absolute; top: 0.55rem; left: 0.55rem; padding: 0.2em 0.65em; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 800; color: var(--teal);
+  background: rgba(46, 230, 197, 0.16); border: 1px solid rgba(46, 230, 197, 0.4);
+}
+.sign-stage-overlay { position: absolute; inset: 0; display: grid; place-items: center; }
+.sign-caption-wrap { position: absolute; left: 0; right: 0; bottom: 0.9rem; display: flex; justify-content: center; pointer-events: none; }
+.sign-caption {
+  padding: 0.3em 1em; border-radius: 999px; white-space: nowrap;
+  font-family: var(--font-display); font-size: 1.2rem; font-weight: 800;
+  background: rgba(7, 5, 20, 0.75); border: 1px solid rgba(255, 255, 255, 0.16);
+  animation: pop 0.3s ease-out;
+}
+.sign-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, 0.08); }
+.sign-progress span { display: block; width: 0; height: 100%; background: var(--grad-cool); }
+.sign-words { gap: 0.35rem; margin: 0.5rem 0 0.35rem; }
+.chip.small { padding: 0.22em 0.7em; font-size: 0.85rem; animation: none; }
+.chip.active { --hue: 170; background: hsl(var(--hue) 90% 60% / 0.38); box-shadow: 0 0 0 2px hsl(var(--hue) 90% 65% / 0.75); }
+.chip.unsigned { --hue: 250; opacity: 0.55; border-style: dashed; }
+button.secondary.toggled { background: rgba(46, 230, 197, 0.28); border-color: rgba(46, 230, 197, 0.6); }
 
 /* ---------- motion ---------- */
 @keyframes pop { from { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.05); } to { transform: scale(1); opacity: 1; } }

@@ -89,3 +89,7 @@ class SignCreate(BaseModel):
 
 class TranslateRequest(BaseModel):
     words: List[str] = Field(..., max_length=50)
+
+
+class TextToSignsRequest(BaseModel):
+    text: str = Field(..., max_length=500)
